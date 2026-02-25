@@ -9,6 +9,7 @@ const NAVS = [
     { id: 'clients', icon: '👥', lbl: 'Clients' },
     { id: 'trade', icon: '📈', lbl: 'New Entry' },
     { id: 'trades', icon: '📋', lbl: 'History' },
+    { id: 'live-prices', icon: '📡', lbl: 'Live Prices' },
     { id: 'portfolio', icon: '💼', lbl: 'Portfolio' },
     { id: 'brokerage', icon: '💰', lbl: 'Earnings' },
     { id: 'reports', icon: '📑', lbl: 'Reports' },

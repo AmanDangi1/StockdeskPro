@@ -9,12 +9,14 @@ import TradesHistory from './pages/TradesHistory';
 import Portfolio from './pages/Portfolio';
 import BrokerageReport from './pages/BrokerageReport';
 import Reports from './pages/Reports';
+import LivePrices from './pages/LivePrices';
 
 const PAGE_META = {
   dashboard: { title: 'Dashboard', sub: 'Overview of your brokerage activity' },
   clients: { title: 'Clients', sub: 'Manage your client base' },
   trade: { title: 'New Trade Entry', sub: 'Record a buy or sell transaction' },
   trades: { title: 'Trade History', sub: 'All your recorded transactions' },
+  'live-prices': { title: 'Live Prices', sub: 'Real-time closing prices' },
   portfolio: { title: 'Portfolio', sub: 'Client stock holdings' },
   brokerage: { title: 'Brokerage Earnings', sub: 'Revenue analysis' },
   reports: { title: 'Weekly Reports', sub: 'Client-wise billing and settlement' },
@@ -61,6 +63,7 @@ export default function App() {
           {pg === 'clients' && <Clients />}
           {pg === 'trade' && <NewTrade sp={setPg} />}
           {pg === 'trades' && <TradesHistory />}
+          {pg === 'live-prices' && <LivePrices />}
           {pg === 'portfolio' && <Portfolio />}
           {pg === 'brokerage' && <BrokerageReport />}
           {pg === 'reports' && <Reports />}
