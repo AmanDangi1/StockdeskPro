@@ -47,7 +47,7 @@ export default function Sidebar({ pg, setPg }) {
                         onClick={() => setPg(n.id)}
                         className={`nav-item ${pg === n.id ? 'active' : ''}`}
                     >
-                        <span>{n.icon}</span>{n.lbl}
+                        <span>{n.icon}</span><span className="n-lbl">{n.lbl}</span>
                     </div>
                 ))}
             </div>
