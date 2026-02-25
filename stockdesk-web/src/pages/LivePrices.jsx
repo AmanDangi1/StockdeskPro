@@ -38,37 +38,64 @@ export default function LivePrices() {
             return;
         }
         setLoading(true);
-        const results = { ...prices };
         let errs = 0;
 
-        for (const sym of wl) {
-            try {
-                // Yahoo Finance requires .NS suffix for NSE stocks
-                const yfSym = sym + '.NS';
-                // Use a standard public CORS proxy to bypass browser restrictions
-                const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${yfSym}`)}`;
+        // Fetch up to 5 at a time concurrently to be extremely fast but avoid proxy rate limits (429)
+        const newPrices = { ...prices };
+        const chunks = [];
+        for (let i = 0; i < wl.length; i += 5) chunks.push(wl.slice(i, i + 5));
 
-                const res = await fetch(url);
-                const data = await res.json();
-                const chartData = JSON.parse(data.contents);
+        for (const chunk of chunks) {
+            await Promise.all(chunk.map(async sym => {
+                try {
+                    // Using Groww's incredibly fast public API via a reliable CORS proxy
+                    const url = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/${sym}/latest`)}`;
 
-                if (chartData.chart.result && chartData.chart.result.length > 0) {
-                    const meta = chartData.chart.result[0].meta;
-                    results[sym] = {
-                        price: meta.regularMarketPrice,
-                        prev: meta.previousClose,
-                        valChange: meta.regularMarketPrice - meta.previousClose,
-                        pctChange: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
-                        time: new Date(meta.regularMarketTime * 1000).toLocaleTimeString()
-                    };
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Proxy or API issue');
+
+                    const data = await res.json();
+
+                    if (data && data.ltp) {
+                        newPrices[sym] = {
+                            price: data.ltp,
+                            prev: data.close,
+                            valChange: data.dayChange,
+                            pctChange: data.dayChangePerc,
+                            time: new Date(data.lastTradeTime * 1000).toLocaleTimeString()
+                        };
+                    } else {
+                        throw new Error('No price data found');
+                    }
+                } catch (err) {
+                    errs++;
+                    console.error("Failed fetching for", sym, err);
+
+                    // Fallback to Yahoo Finance sequentially if Groww or the proxy fails
+                    try {
+                        const yUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}.NS`)}`;
+                        const yRes = await fetch(yUrl);
+                        const yData = await yRes.json();
+                        const chartData = JSON.parse(yData.contents);
+                        if (chartData.chart.result && chartData.chart.result.length > 0) {
+                            const meta = chartData.chart.result[0].meta;
+                            newPrices[sym] = {
+                                price: meta.regularMarketPrice,
+                                prev: meta.previousClose,
+                                valChange: meta.regularMarketPrice - meta.previousClose,
+                                pctChange: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
+                                time: new Date(meta.regularMarketTime * 1000).toLocaleTimeString()
+                            };
+                            errs--; // recovered
+                        }
+                    } catch (yErr) {
+                        // both failed
+                    }
                 }
-            } catch (err) {
-                errs++;
-                console.error("Failed fetching", sym, err);
-            }
+            }));
         }
 
-        setPrices(results);
+        setPrices(newPrices);
         setLoading(false);
         if (errs === 0) add('Latest closing prices fetched ✅', 's');
         else add(`Fetched with ${errs} errors`, 'w');
