@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>StockDesk Pro — Broker Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0d0f1a;
+            --bg2: #131626;
+            --card: #181c30;
+            --border: rgba(120, 130, 200, .15);
+            --blue: #4f8ef7;
+            --purple: #8b5cf6;
+            --green: #22c55e;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --teal: #14b8a6;
+            --text: #eef0ff;
+            --muted: #8892b0;
+            --dim: #4a5578;
+            --r: 12px;
+            --t: all .2s ease
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0
+        }
+
+        .s-logo {
+            padding: 22px 18px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .s-logo h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f8ef7, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .s-logo p {
+            font-size: .68rem;
+            color: var(--dim);
+            margin-top: 2px
+        }
+
+        .s-nav {
+            flex: 1;
+            padding: 14px 10px;
+            overflow-y: auto
+        }
+
+        .nav-lbl {
+            font-size: .6rem;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 10px 8px 4px;
+            font-weight: 600
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: .85rem;
+            font-weight: 500;
+            transition: var(--t);
+            margin-bottom: 2px;
+            border: 1px solid transparent
+        }
+
+        .nav-item:hover {
+            background: rgba(79, 142, 247, .07);
+            color: var(--text)
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(79, 142, 247, .15), rgba(139, 92, 246, .1));
+            color: var(--blue);
+            border-color: rgba(79, 142, 247, .3)
+        }
+
+        .s-foot {
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            font-size: .72rem;
+            color: var(--dim)
+        }
+
+        /* Main */
+        .main {
+            margin-left: 240px;
+            flex: 1;
+            display: flex;
+            flex-direction: column
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            background: rgba(13, 15, 26, .9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 13px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 50
+        }
+
+        .topbar h2 {
+            font-size: 1rem;
+            font-weight: 700
+        }
+
+        .topbar p {
+            font-size: .72rem;
+            color: var(--dim)
+        }
+
+        .topbar-r {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .page {
+            padding: 24px 28px;
+            flex: 1
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            border-radius: var(--r);
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: var(--t)
+        }
+
+        .btn:active {
+            transform: scale(.97)
+        }
+
+        .btn-p {
+            background: linear-gradient(135deg, #4f8ef7, #8b5cf6);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(79, 142, 247, .3)
+        }
+
+        .btn-p:hover {
+            box-shadow: 0 6px 20px rgba(79, 142, 247, .5);
+            transform: translateY(-1px)
+        }
+
+        .btn-g {
+            background: linear-gradient(135deg, #22c55e, #14b8a6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, .25)
+        }
+
+        .btn-r {
+            background: linear-gradient(135deg, #ef4444, #ec4899);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, .25)
+        }
+
+        .btn-o {
+            background: var(--card);
+            color: var(--muted);
+            border: 1px solid var(--border)
+        }
+
+        .btn-o:hover {
+            border-color: var(--blue);
+            color: var(--text)
+        }
+
+        .btn-sm {
+            padding: 6px 11px;
+            font-size: .78rem
+        }
+
+        /* Cards */
+        .card {
+            background: linear-gradient(145deg, #1e2340, #161929);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, .35);
+            transition: var(--t)
+        }
+
+        .card:hover {
+            border-color: rgba(120, 130, 200, .28)
+        }
+
+        .ch {
+            padding: 18px 22px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .ct {
+            font-size: .92rem;
+            font-weight: 600
+        }
+
+        .cs {
+            font-size: .72rem;
+            color: var(--dim);
+            margin-top: 2px
+        }
+
+        .cb {
+            padding: 18px 22px
+        }
+
+        /* Stats */
+        .sgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px
+        }
+
+        .scard {
+            background: linear-gradient(145deg, #1e2340, #161929);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all .3s ease
+        }
+
+        .scard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .4)
+        }
+
+        .scard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            border-radius: 0 14px 0 100%;
+            opacity: .12
+        }
+
+        .scard.bl::before {
+            background: var(--blue)
+        }
+
+        .scard.gr::before {
+            background: var(--green)
+        }
+
+        .scard.re::before {
+            background: var(--red)
+        }
+
+        .scard.am::before {
+            background: var(--amber)
+        }
+
+        .scard.pu::before {
+            background: var(--purple)
+        }
+
+        .scard.te::before {
+            background: var(--teal)
+        }
+
+        .si {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 14px
+        }
+
+        .scard.bl .si {
+            background: rgba(79, 142, 247, .15)
+        }
+
+        .scard.gr .si {
+            background: rgba(34, 197, 94, .15)
+        }
+
+        .scard.re .si {
+            background: rgba(239, 68, 68, .15)
+        }
+
+        .scard.am .si {
+            background: rgba(245, 158, 11, .15)
+        }
+
+        .scard.pu .si {
+            background: rgba(139, 92, 246, .15)
+        }
+
+        .scard.te .si {
+            background: rgba(20, 184, 166, .15)
+        }
+
+        .sv {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1
+        }
+
+        .scard.bl .sv {
+            color: var(--blue)
+        }
+
+        .scard.gr .sv {
+            color: var(--green)
+        }
+
+        .scard.re .sv {
+            color: var(--red)
+        }
+
+        .scard.am .sv {
+            color: var(--amber)
+        }
+
+        .scard.pu .sv {
+            color: var(--purple)
+        }
+
+        .scard.te .sv {
+            color: var(--teal)
+        }
+
+        .sl {
+            font-size: .74rem;
+            color: var(--dim);
+            margin-top: 5px;
+            font-weight: 500
+        }
+
+        /* Table */
+        .tw {
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid var(--border)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem
+        }
+
+        thead th {
+            background: rgba(20, 24, 45, .8);
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: .7rem;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border)
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(120, 130, 200, .07);
+            transition: var(--t)
+        }
+
+        tbody tr:hover {
+            background: rgba(79, 142, 247, .04)
+        }
+
+        tbody tr:last-child {
+            border-bottom: none
+        }
+
+        tbody td {
+            padding: 12px 14px;
+            vertical-align: middle
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase
+        }
+
+        .b-buy {
+            background: rgba(34, 197, 94, .12);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, .2)
+        }
+
+        .b-sell {
+            background: rgba(239, 68, 68, .12);
+            color: var(--red);
+            border: 1px solid rgba(239, 68, 68, .2)
+        }
+
+        .b-act {
+            background: rgba(34, 197, 94, .1);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, .18)
+        }
+
+        .b-ina {
+            background: rgba(100, 100, 130, .12);
+            color: var(--dim);
+            border: 1px solid var(--border)
+        }
+
+        /* Modal */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fi .2s ease
+        }
+
+        @keyframes fi {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .modal {
+            background: var(--card);
+            border: 1px solid rgba(120, 130, 200, .3);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .6);
+            animation: su .25s ease
+        }
+
+        @keyframes su {
+            from {
+                transform: translateY(20px);
+                opacity: 0
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1
+            }
+        }
+
+        .mh {
+            padding: 22px 26px 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between
+        }
+
+        .mh h3 {
+            font-size: 1.1rem;
+            font-weight: 700
+        }
+
+        .mh p {
+            font-size: .75rem;
+            color: var(--dim);
+            margin-top: 3px
+        }
+
+        .mc {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--t)
+        }
+
+        .mc:hover {
+            border-color: var(--red);
+            color: var(--red)
+        }
+
+        .mb {
+            padding: 18px 26px
+        }
+
+        .mf {
+            padding: 0 26px 22px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px
+        }
+
+        /* Form */
+        .fg {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px
+        }
+
+        .fg1 {
+            grid-template-columns: 1fr
+        }
+
+        .fgrp {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .full {
+            grid-column: 1/-1
+        }
+
+        label {
+            font-size: .74rem;
+            font-weight: 600;
+            color: var(--muted)
+        }
+
+        input,
+        select,
+        textarea {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: inherit;
+            font-size: .85rem;
+            padding: 9px 13px;
+            transition: var(--t);
+            outline: none;
+            width: 100%
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(79, 142, 247, .1)
+        }
+
+        input::placeholder {
+            color: var(--dim)
+        }
+
+        select option {
+            background: var(--bg2)
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px
+        }
+
+        .ig {
+            display: flex;
+            align-items: center;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            transition: var(--t)
+        }
+
+        .ig:focus-within {
+            border-color: var(--blue)
+        }
+
+        .ip,
+        .is {
+            padding: 9px 11px;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--dim);
+            white-space: nowrap
+        }
+
+        .ig input {
+            border: none;
+            background: transparent;
+            box-shadow: none !important;
+            flex: 1
+        }
+
+        /* Trade type btns */
+        .tts {
+            display: flex;
+            gap: 8px
+        }
+
+        .tt {
+            flex: 1;
+            padding: 9px;
+            border-radius: var(--r);
+            border: 2px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: .85rem;
+            transition: var(--t);
+            font-family: inherit
+        }
+
+        .tt.buy.on {
+            border-color: var(--green);
+            color: var(--green);
+            background: rgba(34, 197, 94, .08)
+        }
+
+        .tt.sell.on {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(239, 68, 68, .08)
+        }
+
+        /* Summary box */
+        .sum {
+            background: rgba(79, 142, 247, .05);
+            border: 1px solid rgba(79, 142, 247, .15);
+            border-radius: var(--r);
+            padding: 13px 15px;
+            margin-top: 8px
+        }
+
+        .sum-r {
+            display: flex;
+            justify-content: space-between;
+            font-size: .8rem;
+            padding: 3px 0;
+            color: var(--muted)
+        }
+
+        .sum-r strong {
+            color: var(--text)
+        }
+
+        .sum-r.tot {
+            border-top: 1px solid var(--border);
+            margin-top: 5px;
+            padding-top: 9px;
+            font-weight: 700;
+            font-size: .88rem;
+            color: var(--text)
+        }
+
+        .sum-r.tot strong {
+            color: var(--blue);
+            font-size: .95rem
+        }
+
+        /* Filter bar */
+        .fb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap
+        }
+
+        .sb {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 9px 13px;
+            transition: var(--t)
+        }
+
+        .sb:focus-within {
+            border-color: var(--blue)
+        }
+
+        .sb input {
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-size: .85rem;
+            flex: 1;
+            box-shadow: none !important
+        }
+
+        /* Empty state */
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--dim)
+        }
+
+        .empty .ei {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            opacity: .5
+        }
+
+        .empty h3 {
+            color: var(--muted);
+            margin-bottom: 5px
+        }
+
+        /* Page header */
+        .ph {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            gap: 10px
+        }
+
+        .ph h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -.5px
+        }
+
+        .ph p {
+            font-size: .78rem;
+            color: var(--dim);
+            margin-top: 3px
+        }
+
+        /* Client cards */
+        .cgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 14px
+        }
+
+        .cc {
+            background: linear-gradient(145deg, #1e2340, #161929);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            transition: all .3s ease
+        }
+
+        .cc:hover {
+            border-color: rgba(120, 130, 200, .3);
+            transform: translateY(-2px)
+        }
+
+        .cch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px
+        }
+
+        .av {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            font-weight: 800;
+            flex-shrink: 0
+        }
+
+        .ccn {
+            font-weight: 700;
+            font-size: .92rem
+        }
+
+        .cci {
+            font-size: .7rem;
+            color: var(--dim);
+            margin-top: 2px
+        }
+
+        .ccs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .csv {
+            font-size: .88rem;
+            font-weight: 700
+        }
+
+        .csl {
+            font-size: .68rem;
+            color: var(--dim);
+            margin-top: 2px
+        }
+
+        .ccf {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 7px
+        }
+
+        /* Portfolio */
+        .poh {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: linear-gradient(145deg, #1e2340, #161929);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 18px
+        }
+
+        .poa {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 800
+        }
+
+        .pon {
+            font-size: 1.1rem;
+            font-weight: 700
+        }
+
+        .pom {
+            font-size: .75rem;
+            color: var(--dim);
+            margin-top: 2px
+        }
+
+        .pop {
+            margin-left: auto;
+            text-align: right
+        }
+
+        .popv {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--amber)
+        }
+
+        .popl {
+            font-size: .7rem;
+            color: var(--dim)
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 18px
+        }
+
+        .tab {
+            padding: 7px 14px;
+            border-radius: var(--r);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .82rem;
+            font-weight: 500;
+            transition: var(--t);
+            font-family: inherit
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: var(--card)
+        }
+
+        .tab.on {
+            background: var(--card);
+            color: var(--blue);
+            border-color: rgba(79, 142, 247, .3)
+        }
+
+        /* Toast */
+        .tc {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .toast {
+            padding: 12px 16px;
+            border-radius: var(--r);
+            font-size: .83rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+            animation: ti .3s ease;
+            max-width: 320px;
+            border: 1px solid
+        }
+
+        @keyframes ti {
+            from {
+                transform: translateX(100px);
+                opacity: 0
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1
+            }
+        }
+
+        .toast.s {
+            background: #0d2918;
+            border-color: rgba(34, 197, 94, .3);
+            color: var(--green)
+        }
+
+        .toast.e {
+            background: #2a0d0d;
+            border-color: rgba(239, 68, 68, .3);
+            color: var(--red)
+        }
+
+        .toast.i {
+            background: #0d1829;
+            border-color: rgba(79, 142, 247, .3);
+            color: var(--blue)
+        }
+
+        /* Loader */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 18px;
+            z-index: 9999
+        }
+
+        .lsp {
+            width: 38px;
+            height: 38px;
+            border: 3px solid var(--border);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: sp .8s linear infinite
+        }
+
+        @keyframes sp {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* Demo banner */
+        .dbanner {
+            background: rgba(245, 158, 11, .08);
+            border: 1px solid rgba(245, 158, 11, .2);
+            border-radius: var(--r);
+            padding: 5px 12px;
+            font-size: .72rem;
+            color: var(--amber);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        @media(max-width:800px) {
+            .sidebar {
+                width: 60px
+            }
+
+            .s-logo h1,
+            .s-logo p,
+            .nav-item span,
+            .s-foot {
+                display: none
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 11px
+            }
+
+            .main {
+                margin-left: 60px
+            }
+
+            .page {
+                padding: 18px 14px
+            }
+
+            .sgrid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .fg {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:550px) {
+            .sgrid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--dim);
+            border-radius: 10px
+        }
+
+        @media print {
+
+            .sidebar,
+            .topbar,
+            .tabs,
+            .ph button,
+            .dbanner {
+                display: none !important;
+            }
+
+            .main {
+                margin-left: 0 !important;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .card,
+            .scard,
+            .tw,
+            table {
+                background: white !important;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                color: black !important;
+                break-inside: avoid;
+            }
+
+            .card *,
+            .scard *,
+            .tw *,
+            table * {
+                color: black !important;
+            }
+
+            .sv,
+            .popv,
+            .sl,
+            .ct,
+            .cs {
+                color: black !important;
+            }
+
+            .b-buy,
+            .b-sell {
+                border: 1px solid #999 !important;
+                background: transparent !important;
+                color: black !important;
+            }
+
+            .badge {
+                border: 1px solid #999;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbgy0Sl0eZ9WzftR86iTDsi3aTs4LsKTM",
+            authDomain: "stockdesk-pro.firebaseapp.com",
+            projectId: "stockdesk-pro",
+            storageBucket: "stockdesk-pro.firebasestorage.app",
+            messagingSenderId: "931795711778",
+            appId: "1:931795711778:web:7f79b6b94f51676756577b",
+            measurementId: "G-PSHKFVPHNB"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        window.__firebaseDB = db;
+        window.__firebaseMethods = { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, onSnapshot, Timestamp };
+        window.dispatchEvent(new Event("firebase-ready"));
+    </script>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        // ── Utils ──
+        const fmt = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n || 0);
+        const fmtN = n => new Intl.NumberFormat('en-IN').format(n || 0);
+        const fmtD = ts => { if (!ts) return '—'; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); };
+        const AVG = ['linear-gradient(135deg,#4f8ef7,#8b5cf6)', 'linear-gradient(135deg,#22c55e,#14b8a6)', 'linear-gradient(135deg,#f59e0b,#ef4444)', 'linear-gradient(135deg,#ec4899,#8b5cf6)', 'linear-gradient(135deg,#14b8a6,#4f8ef7)'];
+        const ac = n => AVG[(n || '').charCodeAt(0) % AVG.length];
+        const ini = n => (n || '??').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        const gid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+
+        // ── Demo Data Fallback ──
+        const DC = [];
+        const DT = [];
+
+        // ── Toast ──
+        function useToast() {
+            const [ts, setTs] = useState([]);
+            const add = useCallback((msg, type = 'i') => { const id = Date.now(); setTs(p => [...p, { id, msg, type }]); setTimeout(() => setTs(p => p.filter(t => t.id !== id)), 3500); }, []);
+            return { ts, add, rm: useCallback(id => setTs(p => p.filter(t => t.id !== id)), []) };
+        }
+        function Toasts({ ts, rm }) { return <div className="tc">{ts.map(t => <div key={t.id} className={`toast ${t.type}`} onClick={() => rm(t.id)}>{t.type === 's' ? '✅' : t.type === 'e' ? '❌' : 'ℹ️'} {t.msg}</div>)}</div>; }
+
+        // ── Sidebar ──
+        const NAV = [{ id: 'dashboard', icon: '📊', label: 'Dashboard' }, { id: 'clients', icon: '👥', label: 'Clients' }, { id: 'trade', icon: '➕', label: 'New Trade' }, { id: 'trades', icon: '📋', label: 'Trade History' }, { id: 'portfolio', icon: '💼', label: 'Portfolio' }, { id: 'brokerage', icon: '💰', label: 'Brokerage' }, { id: 'reports', icon: '📅', label: 'Weekly Reports' }];
+        function Sidebar({ pg, set, tc }) {
+            return (
+                <aside className="sidebar">
+                    <div className="s-logo"><h1>📈 StockDesk</h1><p>Broker Management System</p></div>
+                    <nav className="s-nav">
+                        <div className="nav-lbl">Menu</div>
+                        {NAV.map(n => <div key={n.id} className={`nav-item ${pg === n.id ? 'active' : ''}`} onClick={() => set(n.id)}><span>{n.icon}</span><span>{n.label}</span>{n.id === 'trades' && tc > 0 && <span style={{ marginLeft: 'auto', background: 'var(--blue)', color: '#fff', fontSize: '.62rem', fontWeight: 700, padding: '1px 6px', borderRadius: 20 }}>{tc}</span>}</div>)}
+                    </nav>
+                    <div className="s-foot">🟢 LIVE — Connected to Database</div>
+                </aside>
+            );
+        }
+
+        // ── Stat Card ──
+        function SC({ c, icon, val, lbl }) { return (<div className={`scard ${c}`}><div className="si">{icon}</div><div className="sv">{val}</div><div className="sl">{lbl}</div></div>); }
+
+        // ── Trade Table ──
+        function TT({ trades, onDel, onEdit, compact }) {
+            if (!trades.length) return <div className="empty"><div className="ei">📋</div><h3>No trades found</h3><p>Add a new trade to get started</p></div>;
+            return (<div className="tw"><table>
+                <thead><tr><th>Client</th><th>Stock</th><th>Type</th><th>Qty</th><th>Rate</th><th>Total</th><th>Brokerage</th>{!compact && <th>Date</th>}{(onDel || onEdit) && <th>Actions</th>}</tr></thead>
+                <tbody>{trades.map(t => (
+                    <tr key={t.id}>
+                        <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: ac(t.cn), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.62rem', fontWeight: 700 }}>{ini(t.cn)}</div><span style={{ fontWeight: 600 }}>{t.cn}</span></div></td>
+                        <td><div style={{ fontWeight: 700, color: 'var(--blue)' }}>{t.sym}</div>{!compact && <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>{t.sn}</div>}</td>
+                        <td><span className={`badge b-${t.type}`}>{t.type === 'buy' ? '▲' : '▼'} {t.type.toUpperCase()}</span></td>
+                        <td style={{ fontWeight: 600 }}>{fmtN(t.qty)}</td>
+                        <td>{fmt(t.rate)}</td>
+                        <td style={{ fontWeight: 700 }}>{fmt(t.val)}</td>
+                        <td style={{ color: 'var(--amber)', fontWeight: 600 }}>{fmt(t.brok)}</td>
+                        {!compact && <td style={{ fontSize: '.74rem', color: 'var(--dim)' }}>{fmtD(t.at)}</td>}
+                        {(onDel || onEdit) && <td>
+                            {onEdit && <button className="btn btn-o btn-sm" style={{ marginRight: 6 }} onClick={() => onEdit(t)}>✏️</button>}
+                            {onDel && <button className="btn btn-o btn-sm" style={{ color: 'var(--red)' }} onClick={() => onDel(t.id)}>🗑</button>}
+                        </td>}
+                    </tr>
+                ))}</tbody>
+            </table></div>);
+        }
+
+        // ── Dashboard ──
+        function Dashboard({ clients, trades, sp }) {
+            const tb = trades.reduce((s, t) => s + (t.brok || 0), 0);
+            const bv = trades.filter(t => t.type === 'buy').reduce((s, t) => s + (t.val || 0), 0);
+            const sv = trades.filter(t => t.type === 'sell').reduce((s, t) => s + (t.val || 0), 0);
+            const rec = [...trades].slice(0, 5);
+            return (<div>
+                <div className="ph"><div><h2>Dashboard 📊</h2><p>Welcome back! Here's your activity overview.</p></div><button className="btn btn-p" onClick={() => sp('trade')}>＋ New Trade</button></div>
+                <div className="sgrid">
+                    <SC c="bl" icon="👥" val={clients.length} lbl="Total Clients" />
+                    <SC c="gr" icon="▲" val={trades.filter(t => t.type === 'buy').length} lbl="Buy Orders" />
+                    <SC c="re" icon="▼" val={trades.filter(t => t.type === 'sell').length} lbl="Sell Orders" />
+                    <SC c="am" icon="💰" val={fmt(tb)} lbl="Total Brokerage Earned" />
+                    <SC c="pu" icon="🛒" val={fmt(bv)} lbl="Total Buy Value" />
+                    <SC c="te" icon="💵" val={fmt(sv)} lbl="Total Sell Value" />
+                </div>
+                <div className="card">
+                    <div className="ch"><div><div className="ct">Recent Trades</div><div className="cs">Last 5 transactions</div></div><button className="btn btn-o btn-sm" onClick={() => sp('trades')}>View All →</button></div>
+                    <div className="cb" style={{ padding: 0 }}><TT trades={rec} compact /></div>
+                </div>
+            </div>);
+        }
+
+        // ── Client Modal ──
+        function CM({ init, onSave, onClose }) {
+            const [f, setF] = useState({ name: init?.name || '', phone: init?.phone || '', email: init?.email || '', pan: init?.pan || '', bRate: init?.bRate || 0.5, status: init?.status || 'active', notes: init?.notes || '' });
+            const s = (k, v) => setF(p => ({ ...p, [k]: v }));
+            const sub = e => { e.preventDefault(); if (!f.name.trim()) return; onSave({ ...init, ...f, bRate: parseFloat(f.bRate) }); onClose(); };
+            return (<div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+                <div className="modal">
+                    <div className="mh"><div><h3>{init ? '✏️ Edit Client' : '➕ Add Client'}</h3><p>{init ? 'Update client info' : 'Register a new client'}</p></div><button className="mc" onClick={onClose}>✕</button></div>
+                    <form onSubmit={sub}><div className="mb">
+                        <div className="fg">
+                            <div className="fgrp full"><label>Full Name *</label><input required value={f.name} onChange={e => s('name', e.target.value)} placeholder="e.g. Rahul Sharma" /></div>
+                            <div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => s('phone', e.target.value)} placeholder="9876543210" /></div>
+                            <div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => s('email', e.target.value)} placeholder="email@example.com" /></div>
+                            <div className="fgrp"><label>PAN Number</label><input value={f.pan} onChange={e => s('pan', e.target.value.toUpperCase())} placeholder="ABCDE1234F" maxLength={10} /></div>
+                            <div className="fgrp"><label>Brokerage Rate (%)</label><div className="ig"><input type="number" step="0.01" min="0" max="5" value={f.bRate} onChange={e => s('bRate', e.target.value)} /><span className="is">%</span></div></div>
+                            <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => s('status', e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                            <div className="fgrp full"><label>Notes</label><textarea value={f.notes} onChange={e => s('notes', e.target.value)} placeholder="Additional notes..." /></div>
+                        </div>
+                    </div>
+                        <div className="mf"><button type="button" className="btn btn-o" onClick={onClose}>Cancel</button><button type="submit" className="btn btn-p">{init ? '💾 Save' : '➕ Add Client'}</button></div>
+                    </form>
+                </div>
+            </div>);
+        }
+
+        // ── Clients ──
+        function Clients({ clients, trades, add, edit, del }) {
+            const [show, setShow] = useState(false); const [ed, setEd] = useState(null); const [q, setQ] = useState('');
+            const fil = useMemo(() => clients.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone?.includes(q) || c.email?.toLowerCase().includes(q.toLowerCase())), [clients, q]);
+            const ct = cid => trades.filter(t => t.cid === cid);
+            const cb = cid => ct(cid).reduce((s, t) => s + (t.brok || 0), 0);
+            return (<div>
+                <div className="ph"><div><h2>Clients 👥</h2><p>Manage your client accounts</p></div><button className="btn btn-p" onClick={() => { setEd(null); setShow(true); }}>＋ Add Client</button></div>
+                <div className="fb"><div className="sb"><span>🔍</span><input placeholder="Search name, phone, email..." value={q} onChange={e => setQ(e.target.value)} /></div><span style={{ color: 'var(--dim)', fontSize: '.8rem' }}>{fil.length} clients</span></div>
+                {!fil.length ? <div className="empty"><div className="ei">👥</div><h3>No clients found</h3><p>Add your first client to start tracking</p></div> :
+                    <div className="cgrid">{fil.map(c => {
+                        const t2 = ct(c.id); const bk = cb(c.id); return (
+                            <div key={c.id} className="cc">
+                                <div className="cch"><div className="av" style={{ background: ac(c.name) }}>{ini(c.name)}</div><div><div className="ccn">{c.name}</div><div className="cci">ID:{c.id} · <span className={`badge ${c.status === 'active' ? 'b-act' : 'b-ina'}`} style={{ fontSize: '.6rem', padding: '1px 5px' }}>{c.status}</span></div></div></div>
+                                <div className="ccs">
+                                    <div><div className="csv">{t2.length}</div><div className="csl">Total Trades</div></div>
+                                    <div><div className="csv" style={{ color: 'var(--amber)' }}>{fmt(bk)}</div><div className="csl">Brokerage</div></div>
+                                    <div><div className="csv" style={{ fontSize: '.8rem' }}>{c.phone || '—'}</div><div className="csl">Phone</div></div>
+                                    <div><div className="csv" style={{ fontSize: '.74rem' }}>{c.pan || '—'}</div><div className="csl">PAN</div></div>
+                                </div>
+                                {c.bRate && <div style={{ marginTop: 10, padding: '5px 9px', background: 'rgba(245,158,11,.07)', borderRadius: 8, fontSize: '.72rem', color: 'var(--amber)' }}>💰 Rate: {c.bRate}%</div>}
+                                <div className="ccf">
+                                    <button className="btn btn-o btn-sm" style={{ flex: 1 }} onClick={() => { setEd(c); setShow(true); }}>✏️ Edit</button>
+                                    <button className="btn btn-o btn-sm" style={{ flex: 1, color: 'var(--red)' }} onClick={() => del(c.id)}>🗑 Delete</button>
+                                </div>
+                            </div>);
+                    })}</div>}
+                {show && <CM init={ed} onSave={ed ? edit : add} onClose={() => setShow(false)} />}
+            </div>);
+        }
+
+        // ── Stock list ──
+        const STOCKS = [{ s: 'RELIANCE', n: 'Reliance Industries' }, { s: 'TCS', n: 'Tata Consultancy Services' }, { s: 'HDFC', n: 'HDFC Bank' }, { s: 'INFY', n: 'Infosys Ltd' }, { s: 'WIPRO', n: 'Wipro Ltd' }, { s: 'ITC', n: 'ITC Ltd' }, { s: 'SBIN', n: 'State Bank of India' }, { s: 'BHARTIARTL', n: 'Bharti Airtel' }, { s: 'TATASTEEL', n: 'Tata Steel' }, { s: 'MARUTI', n: 'Maruti Suzuki' }, { s: 'ADANIENT', n: 'Adani Enterprises' }, { s: 'BAJFINANCE', n: 'Bajaj Finance' }, { s: 'ICICIBANK', n: 'ICICI Bank' }, { s: 'LT', n: 'Larsen & Toubro' }, { s: 'AXISBANK', n: 'Axis Bank' }, { s: 'HCLTECH', n: 'HCL Technologies' }, { s: 'SUNPHARMA', n: 'Sun Pharma' }, { s: 'KOTAKBANK', n: 'Kotak Mahindra Bank' }];
+
+        // ── Trade Entry ──
+        function Trade({ clients, addTrade, sp, trades }) {
+            const [f, setF] = useState({ cid: '', type: 'buy', sym: '', sn: '', qty: '', rate: '', bOvr: '', dateStr: new Date().toISOString().slice(0, 10) });
+            const [sq, setSq] = useState(''); const [sl, setSl] = useState(false);
+            const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+            const cli = clients.find(c => c.id === f.cid);
+            const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
+            const val = qty * rate;
+            const br = cli?.bRate || 0.5;
+
+            // Brokerage Logic
+            let brok = f.bOvr !== '' ? parseFloat(f.bOvr) : (val * br / 100);
+
+            // Check for matching intraday trades
+            const tradeDate = new Date(f.dateStr);
+            tradeDate.setHours(0, 0, 0, 0);
+
+            // Find opposite trades for the same client, same stock, same day
+            const oppType = f.type === 'buy' ? 'sell' : 'buy';
+            const intradayMatches = trades ? trades.filter(t => {
+                if (t.cid !== f.cid || t.sym !== f.sym || t.type !== oppType) return false;
+                const tDate = t.at?.toDate ? t.at.toDate() : new Date(0);
+                tDate.setHours(0, 0, 0, 0);
+                return tDate.getTime() === tradeDate.getTime();
+            }) : [];
+
+            let intradayMatchText = "";
+
+            if (f.bOvr === '' && intradayMatches.length > 0) {
+                // Simplified intraday logic: if there's *any* opposite trade today, we compare values
+                // For a complete system, you'd match exact quantities, but this meets the basic requirement
+                // "if i buy and sell the same amount of share at same day then brokrage will be on one only either on buy or sell whichever price is high"
+
+                // Find the total value of opposite trades today
+                let oppQty = 0;
+                let oppVal = 0;
+                let oppBrok = 0;
+                intradayMatches.forEach(t => {
+                    oppQty += t.qty;
+                    oppVal += t.val;
+                    oppBrok += t.brok;
+                });
+
+                // If quantities roughly match (we'll just apply it if there's any matching trade for simplicity)
+                if (oppQty > 0) {
+                    const currentBrok = val * br / 100;
+                    if (val > oppVal) {
+                        // Current trade is higher value, it takes the full brokerage
+                        brok = currentBrok;
+                        intradayMatchText = "(Intraday Match: This trade is higher, full brokerage applied)";
+                    } else {
+                        // Current trade is lower value, it gets 0 brokerage (the other trade already paid it or will pay it)
+                        brok = 0;
+                        intradayMatchText = "(Intraday Match: Opposite trade was higher, no brokerage on this leg)";
+                    }
+                }
+            }
+
+            const net = f.type === 'buy' ? val + brok : val - brok;
+            const fs = STOCKS.filter(s => s.s.toLowerCase().includes(sq.toLowerCase()) || s.n.toLowerCase().includes(sq.toLowerCase()));
+            const pick = s => { set('sym', s.s); set('sn', s.n); setSq(s.s); setSl(false); };
+            const sub = e => {
+                e.preventDefault();
+                if (!f.cid || !f.sym || !qty || !rate || !f.dateStr) return;
+                const dt = new Date(f.dateStr);
+                dt.setHours(new Date().getHours(), new Date().getMinutes());
+                addTrade({ cid: f.cid, cn: cli?.name || '', sym: f.sym, sn: f.sn, type: f.type, qty, rate, brok, val, net, at: { toDate: () => dt } });
+                sp('trades');
+            };
+            return (<div>
+                <div className="ph"><div><h2>📈 New Trade Entry</h2><p>Record a buy or sell transaction</p></div></div>
+                <div style={{ maxWidth: 620 }}>
+                    <div className="card"><div className="ch"><div className="ct">Transaction Details</div></div>
+                        <div className="cb"><form onSubmit={sub}>
+                            <div className="fg">
+                                <div className="fgrp full"><label>Transaction Type *</label><div className="tts"><button type="button" className={`tt buy ${f.type === 'buy' ? 'on' : ''}`} onClick={() => set('type', 'buy')}>▲ BUY</button><button type="button" className={`tt sell ${f.type === 'sell' ? 'on' : ''}`} onClick={() => set('type', 'sell')}>▼ SELL</button></div></div>
+                                <div className="fgrp full"><label>Select Client *</label><select required value={f.cid} onChange={e => set('cid', e.target.value)}><option value="">— Choose client —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}</select></div>
+                                <div className="fgrp full" style={{ position: 'relative' }}>
+                                    <label>Stock Symbol *</label>
+                                    <input value={sq} onChange={e => { setSq(e.target.value); set('sym', e.target.value.toUpperCase()); set('sn', ''); setSl(true); }} onFocus={() => setSl(true)} placeholder="Search stock e.g. RELIANCE, TCS..." autoComplete="off" />
+                                    {sl && sq && fs.length > 0 && <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r)', zIndex: 200, maxHeight: 180, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+                                        {fs.map(s => <div key={s.s} onMouseDown={e => { e.preventDefault(); pick(s); }} style={{ padding: '9px 13px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'} onMouseLeave={e => e.currentTarget.style.background = ''}><strong style={{ color: 'var(--blue)' }}>{s.s}</strong><span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>{s.n}</span></div>)}
+                                    </div>}
+                                </div>
+                                <div className="fgrp"><label>Trade Date *</label><input type="date" required value={f.dateStr} onChange={e => set('dateStr', e.target.value)} /></div>
+                                <div className="fgrp"><label>Quantity *</label><input type="number" required min="1" value={f.qty} onChange={e => set('qty', e.target.value)} placeholder="e.g. 100" /></div>
+                                <div className="fgrp"><label>Rate per Share (₹) *</label><div className="ig"><span className="ip">₹</span><input type="number" required step="0.01" min="0.01" value={f.rate} onChange={e => set('rate', e.target.value)} placeholder="0.00" /></div></div>
+                                <div className="fgrp"><label>Auto Brokerage</label><div style={{ padding: '9px 13px', background: 'var(--bg2)', borderRadius: 'var(--r)', border: '1px solid var(--border)', color: 'var(--amber)', fontWeight: 600, fontSize: '.85rem' }}>{br}% {cli ? `(${cli.name})` : '— select client'} {intradayMatchText && <span style={{ fontSize: 10, display: 'block', color: 'var(--dim)' }}>{intradayMatchText}</span>}</div></div>
+                                <div className="fgrp"><label>Override Brokerage ₹ <span style={{ color: 'var(--dim)', fontWeight: 400 }}>(optional)</span></label><div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" value={f.bOvr} onChange={e => set('bOvr', e.target.value)} placeholder="Leave blank = auto" /></div></div>
+                            </div>
+                            {qty > 0 && rate > 0 && <div className="sum">
+                                <div style={{ fontWeight: 700, fontSize: '.83rem', marginBottom: 7 }}>📋 Trade Summary</div>
+                                <div className="sum-r"><span>Trade Value:</span><strong>{fmt(val)}</strong></div>
+                                <div className="sum-r"><span>Brokerage ({br}%):</span><strong style={{ color: 'var(--amber)' }}>{fmt(brok)}</strong></div>
+                                <div className="sum-r tot"><span>{f.type === 'buy' ? 'Total Payable' : 'Net Receivable'}:</span><strong>{fmt(net)}</strong></div>
+                            </div>}
+                            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+                                <button type="button" className="btn btn-o" style={{ flex: 1 }} onClick={() => sp('trades')}>Cancel</button>
+                                <button type="submit" className={`btn ${f.type === 'buy' ? 'btn-g' : 'btn-r'}`} style={{ flex: 2 }}>{f.type === 'buy' ? '▲ Record BUY' : '▼ Record SELL'}</button>
+                            </div>
+                        </form></div></div>
+                </div>
+            </div>);
+        }
+
+        // ── Trade Modal (Edit) ──
+        function TM({ clients, init, onSave, onClose }) {
+            const [f, setF] = useState({
+                cid: init?.cid || '',
+                type: init?.type || 'buy',
+                sym: init?.sym || '',
+                sn: init?.sn || '',
+                qty: init?.qty || '',
+                rate: init?.rate || '',
+                bOvr: init?.brok !== undefined ? init.brok : '',
+                dateStr: init?.at ? (init.at.toDate ? init.at.toDate() : new Date(init.at)).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 10) : new Date().toISOString().slice(0, 10)
+            });
+            const [sq, setSq] = useState(init?.sym || ''); const [sl, setSl] = useState(false);
+            const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+            const cli = clients.find(c => c.id === f.cid);
+            const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
+            const val = qty * rate;
+            const br = cli?.bRate || 0.5;
+
+            let brok = f.bOvr !== '' ? parseFloat(f.bOvr) : (val * br / 100);
+            const net = f.type === 'buy' ? val + brok : val - brok;
+            const fs = STOCKS.filter(s => s.s.toLowerCase().includes(sq.toLowerCase()) || s.n.toLowerCase().includes(sq.toLowerCase()));
+            const pick = s => { set('sym', s.s); set('sn', s.n); setSq(s.s); setSl(false); };
+
+            const sub = e => {
+                e.preventDefault();
+                if (!f.cid || !f.sym || !qty || !rate || !f.dateStr) return;
+                const dt = new Date(f.dateStr);
+                if (init && init.at) {
+                    const initDt = init.at.toDate ? init.at.toDate() : new Date(init.at);
+                    dt.setHours(initDt.getHours(), initDt.getMinutes(), initDt.getSeconds());
+                } else {
+                    dt.setHours(new Date().getHours(), new Date().getMinutes());
+                }
+                onSave({ ...init, cid: f.cid, cn: cli?.name || '', sym: f.sym, sn: f.sn, type: f.type, qty, rate, brok, val, net, at: { toDate: () => dt } });
+                onClose();
+            };
+
+            return (<div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+                <div className="modal">
+                    <div className="mh"><div><h3>✏️ Edit Trade</h3><p>Update transaction details</p></div><button className="mc" onClick={onClose}>✕</button></div>
+                    <form onSubmit={sub}>
+                        <div className="mb">
+                            <div className="fg">
+                                <div className="fgrp full"><label>Transaction Type *</label><div className="tts"><button type="button" className={`tt buy ${f.type === 'buy' ? 'on' : ''}`} onClick={() => set('type', 'buy')}>▲ BUY</button><button type="button" className={`tt sell ${f.type === 'sell' ? 'on' : ''}`} onClick={() => set('type', 'sell')}>▼ SELL</button></div></div>
+                                <div className="fgrp full"><label>Select Client *</label><select required value={f.cid} onChange={e => set('cid', e.target.value)}><option value="">— Choose client —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}</select></div>
+                                <div className="fgrp full" style={{ position: 'relative' }}>
+                                    <label>Stock Symbol *</label>
+                                    <input value={sq} onChange={e => { setSq(e.target.value); set('sym', e.target.value.toUpperCase()); set('sn', ''); setSl(true); }} onFocus={() => setSl(true)} placeholder="Search stock..." autoComplete="off" />
+                                    {sl && sq && fs.length > 0 && <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r)', zIndex: 200, maxHeight: 180, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+                                        {fs.map(s => <div key={s.s} onMouseDown={e => { e.preventDefault(); pick(s); }} style={{ padding: '9px 13px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'} onMouseLeave={e => e.currentTarget.style.background = ''}><strong style={{ color: 'var(--blue)' }}>{s.s}</strong><span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>{s.n}</span></div>)}
+                                    </div>}
+                                </div>
+                                <div className="fgrp"><label>Trade Date *</label><input type="date" required value={f.dateStr} onChange={e => set('dateStr', e.target.value)} /></div>
+                                <div className="fgrp"><label>Quantity *</label><input type="number" required min="1" value={f.qty} onChange={e => set('qty', e.target.value)} /></div>
+                                <div className="fgrp"><label>Rate (₹) *</label><div className="ig"><span className="ip">₹</span><input type="number" required step="0.01" min="0.01" value={f.rate} onChange={e => set('rate', e.target.value)} /></div></div>
+                                <div className="fgrp full"><label>Brokerage ₹ Override *</label><div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" required value={f.bOvr} onChange={e => set('bOvr', e.target.value)} /></div></div>
+                            </div>
+                        </div>
+                        <div className="mf"><button type="button" className="btn btn-o" onClick={onClose}>Cancel</button><button type="submit" className="btn btn-p">💾 Save Changes</button></div>
+                    </form>
+                </div>
+            </div>);
+        }
+
+        // ── Trade History ──
+        function Trades({ trades, clients, del, edit }) {
+            const [q, setQ] = useState(''); const [ft, setFt] = useState('all'); const [fc, setFc] = useState('all');
+            const [show, setShow] = useState(false); const [ed, setEd] = useState(null);
+            const fil = useMemo(() => [...trades].filter(t => {
+                const ms = t.sym?.toLowerCase().includes(q.toLowerCase()) || t.cn?.toLowerCase().includes(q.toLowerCase()) || t.sn?.toLowerCase().includes(q.toLowerCase());
+                return ms && (ft === 'all' || t.type === ft) && (fc === 'all' || t.cid === fc);
+            }).sort((a, b) => { const da = a.at?.toDate ? a.at.toDate() : new Date(0); const db2 = b.at?.toDate ? b.at.toDate() : new Date(0); return db2 - da; }), [trades, q, ft, fc]);
+            return (<div>
+                <div className="ph"><div><h2>Trade History 📋</h2><p>{trades.length} total transactions</p></div></div>
+                <div className="fb">
+                    <div className="sb"><span>🔍</span><input placeholder="Search stock or client..." value={q} onChange={e => setQ(e.target.value)} /></div>
+                    <select style={{ padding: '9px 13px', minWidth: 130 }} value={ft} onChange={e => setFt(e.target.value)}><option value="all">All Types</option><option value="buy">Buy Only</option><option value="sell">Sell Only</option></select>
+                    <select style={{ padding: '9px 13px', minWidth: 140 }} value={fc} onChange={e => setFc(e.target.value)}><option value="all">All Clients</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                    <span style={{ color: 'var(--dim)', fontSize: '.8rem' }}>{fil.length} records</span>
+                </div>
+                <TT trades={fil} onDel={del} onEdit={t => { setEd(t); setShow(true); }} />
+                {show && <TM clients={clients} init={ed} onSave={edit} onClose={() => setShow(false)} />}
+            </div>);
+        }
+
+        // ── Portfolio ──
+        function Portfolio({ clients, trades }) {
+            const [sc, setSc] = useState('all');
+            const data = useMemo(() => {
+                const cl = sc === 'all' ? clients : clients.filter(c => c.id === sc);
+                return cl.map(client => {
+                    const ct = trades.filter(t => t.cid === client.id);
+                    const h = {};
+                    ct.forEach(t => {
+                        if (!h[t.sym]) h[t.sym] = { sym: t.sym, sn: t.sn, qty: 0, bv: 0, sv: 0, brok: 0 };
+                        if (t.type === 'buy') { h[t.sym].qty += t.qty; h[t.sym].bv += t.val; }
+                        else { h[t.sym].qty -= t.qty; h[t.sym].sv += t.val; }
+                        h[t.sym].brok += t.brok || 0;
+                    });
+                    return { client, h: Object.values(h), tb: ct.reduce((s, t) => s + (t.brok || 0), 0), tc: ct.length };
+                });
+            }, [clients, trades, sc]);
+            return (<div>
+                <div className="ph"><div><h2>Portfolio 💼</h2><p>Client-wise stock holdings</p></div>
+                    <select style={{ padding: '9px 13px', minWidth: 200 }} value={sc} onChange={e => setSc(e.target.value)}><option value="all">All Clients</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                </div>
+                {!data.length ? <div className="empty"><div className="ei">💼</div><h3>No portfolio data</h3><p>Add clients and trades first</p></div> :
+                    data.map(({ client, h, tb, tc }) => (
+                        <div key={client.id} style={{ marginBottom: 26 }}>
+                            <div className="poh">
+                                <div className="poa" style={{ background: ac(client.name) }}>{ini(client.name)}</div>
+                                <div><div className="pon">{client.name}</div><div className="pom">ID:{client.id} · {tc} trades · PAN:{client.pan || '—'}</div></div>
+                                <div className="pop"><div className="popv">{fmt(tb)}</div><div className="popl">Total Brokerage</div></div>
+                            </div>
+                            {!h.length ? <div className="empty" style={{ padding: 24 }}><p>No holdings</p></div> :
+                                <div className="tw"><table>
+                                    <thead><tr><th>Symbol</th><th>Company</th><th>Net Qty</th><th>Buy Value</th><th>Sell Value</th><th>Brokerage</th><th>Status</th></tr></thead>
+                                    <tbody>{h.map(x => <tr key={x.sym}>
+                                        <td><strong style={{ color: 'var(--blue)' }}>{x.sym}</strong></td>
+                                        <td style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{x.sn}</td>
+                                        <td><strong style={{ color: x.qty > 0 ? 'var(--green)' : x.qty < 0 ? 'var(--red)' : 'var(--dim)' }}>{fmtN(x.qty)}</strong></td>
+                                        <td>{fmt(x.bv)}</td><td>{fmt(x.sv)}</td>
+                                        <td style={{ color: 'var(--amber)' }}>{fmt(x.brok)}</td>
+                                        <td><span className={`badge ${x.qty > 0 ? 'b-buy' : x.qty === 0 ? 'b-ina' : 'b-sell'}`}>{x.qty > 0 ? 'HOLDING' : x.qty === 0 ? 'CLOSED' : 'SHORT'}</span></td>
+                                    </tr>)}</tbody>
+                                </table></div>}
+                        </div>))}
+            </div>);
+        }
+
+        // ── Brokerage ──
+        function Brokerage({ trades, clients }) {
+            const [period, setPeriod] = useState('all');
+            const ft = useMemo(() => {
+                if (period === 'all') return trades;
+                const cut = new Date();
+                if (period === 'today') cut.setHours(0, 0, 0, 0);
+                else if (period === 'week') cut.setDate(cut.getDate() - 7);
+                else if (period === 'month') cut.setMonth(cut.getMonth() - 1);
+                return trades.filter(t => { const d = t.at?.toDate ? t.at.toDate() : new Date(0); return d >= cut; });
+            }, [trades, period]);
+            const tb = ft.reduce((s, t) => s + (t.brok || 0), 0);
+            const bb = ft.filter(t => t.type === 'buy').reduce((s, t) => s + (t.brok || 0), 0);
+            const sb = ft.filter(t => t.type === 'sell').reduce((s, t) => s + (t.brok || 0), 0);
+            const byC = useMemo(() => clients.map(c => ({ ...c, bk: ft.filter(t => t.cid === c.id).reduce((s, t) => s + (t.brok || 0), 0), tc: ft.filter(t => t.cid === c.id).length })).filter(c => c.tc > 0).sort((a, b) => b.bk - a.bk), [clients, ft]);
+            return (<div>
+                <div className="ph"><div><h2>Brokerage Report 💰</h2><p>Earnings across all transactions</p></div>
+                    <div className="tabs" style={{ marginBottom: 0 }}>{[['all', 'All Time'], ['month', 'This Month'], ['week', 'This Week'], ['today', 'Today']].map(([v, l]) => <button key={v} className={`tab ${period === v ? 'on' : ''}`} onClick={() => setPeriod(v)}>{l}</button>)}</div>
+                </div>
+                <div className="sgrid" style={{ marginBottom: 24 }}>
+                    <SC c="am" icon="💰" val={fmt(tb)} lbl="Total Brokerage Earned" />
+                    <SC c="gr" icon="▲" val={fmt(bb)} lbl="From Buy Orders" />
+                    <SC c="re" icon="▼" val={fmt(sb)} lbl="From Sell Orders" />
+                    <SC c="bl" icon="📋" val={ft.length} lbl="Transactions" />
+                </div>
+                <div className="card"><div className="ch"><div className="ct">Brokerage by Client</div></div>
+                    <div className="cb" style={{ padding: 0 }}>
+                        {!byC.length ? <div className="empty"><p>No data for this period</p></div> :
+                            <div className="tw"><table>
+                                <thead><tr><th>Client</th><th>PAN</th><th>Rate</th><th>Trades</th><th>Brokerage Earned</th><th>Share %</th></tr></thead>
+                                <tbody>{byC.map(c => <tr key={c.id}>
+                                    <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 34, height: 34, borderRadius: '50%', background: ac(c.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.7rem', fontWeight: 700 }}>{ini(c.name)}</div><div><div style={{ fontWeight: 600 }}>{c.name}</div><div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>{c.email || '—'}</div></div></div></td>
+                                    <td style={{ fontFamily: 'monospace', fontSize: '.8rem', color: 'var(--muted)' }}>{c.pan || '—'}</td>
+                                    <td><span style={{ color: 'var(--amber)', fontWeight: 600 }}>{c.bRate}%</span></td>
+                                    <td>{c.tc}</td>
+                                    <td><strong style={{ color: 'var(--amber)', fontSize: '.95rem' }}>{fmt(c.bk)}</strong></td>
+                                    <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ flex: 1, height: 6, background: 'var(--bg2)', borderRadius: 10, overflow: 'hidden' }}><div style={{ height: '100%', width: `${Math.round((c.bk / tb) * 100) || 0}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)', borderRadius: 10 }} /></div><span style={{ fontSize: '.74rem', color: 'var(--dim)', minWidth: 34 }}>{Math.round((c.bk / tb) * 100) || 0}%</span></div></td>
+                                </tr>)}</tbody>
+                            </table></div>}
+                    </div></div>
+            </div>);
+        }
+
+        // ── Weekly Reports ──
+        function Reports({ trades, clients }) {
+            const weeks = useMemo(() => {
+                const ws = [];
+                const today = new Date();
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                const mon = new Date(today);
+                mon.setDate(diff); mon.setHours(0, 0, 0, 0);
+                for (let i = 0; i < 8; i++) {
+                    const s = new Date(mon); s.setDate(s.getDate() - (i * 7));
+                    const e = new Date(s); e.setDate(e.getDate() + 6); e.setHours(23, 59, 59, 999);
+                    ws.push({ id: `w${i}`, label: `${s.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} to ${e.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} (${s.getFullYear()})`, s, e });
+                }
+                return ws;
+            }, []);
+
+            const [sc, setSc] = useState('all');
+            const [sw, setSw] = useState('w0');
+
+            const selWeek = weeks.find(w => w.id === sw);
+
+            const reportData = useMemo(() => {
+                const cl = sc === 'all' ? clients : clients.filter(c => c.id === sc);
+                return cl.map(client => {
+                    // To calculate exact profit, we need chronologically sorted ALL trades for the client
+                    const allClientTrades = trades
+                        .filter(t => t.cid === client.id)
+                        .sort((a, b) => {
+                            const da = a.at?.toDate ? a.at.toDate() : new Date(0);
+                            const dbTime = b.at?.toDate ? b.at.toDate() : new Date(0);
+                            return da - dbTime;
+                        });
+
+                    const ct = allClientTrades.filter(t => (!selWeek || (t.at?.toDate ? t.at.toDate() : new Date(0)) >= selWeek.s && (t.at?.toDate ? t.at.toDate() : new Date(0)) <= selWeek.e));
+
+                    const tb = ct.reduce((sum, t) => sum + (t.brok || 0), 0);
+                    const bv = ct.filter(t => t.type === 'buy').reduce((sum, t) => sum + (t.val || 0), 0);
+                    const sv = ct.filter(t => t.type === 'sell').reduce((sum, t) => sum + (t.val || 0), 0);
+
+                    // Track exact realized PnL for closed positions using FIFO chronological matching
+                    const holdings = {};
+                    let totalPnl = 0;
+
+                    allClientTrades.forEach(t => {
+                        const tDate = t.at?.toDate ? t.at.toDate() : new Date(0);
+                        const isTradeInSelectedWeek = (!selWeek || (tDate >= selWeek.s && tDate <= selWeek.e));
+
+                        if (!holdings[t.sym]) holdings[t.sym] = [];
+
+                        if (t.type === 'buy') {
+                            // push this buy lot
+                            holdings[t.sym].push({ qty: t.qty, rate: t.rate });
+                        } else {
+                            // Sell side - match with oldest available buys (FIFO)
+                            let remainingToSell = t.qty;
+                            let costBasisForThisSell = 0;
+
+                            while (remainingToSell > 0 && holdings[t.sym].length > 0) {
+                                let oldestLot = holdings[t.sym][0];
+                                if (oldestLot.qty <= remainingToSell) {
+                                    // exhaust this lot
+                                    costBasisForThisSell += oldestLot.qty * oldestLot.rate;
+                                    remainingToSell -= oldestLot.qty;
+                                    holdings[t.sym].shift(); // remove exhausted lot
+                                } else {
+                                    // partially use this lot
+                                    costBasisForThisSell += remainingToSell * oldestLot.rate;
+                                    oldestLot.qty -= remainingToSell;
+                                    remainingToSell = 0;
+                                }
+                            }
+                            // Calculate pure realized profit from this sell
+                            const realizedProfit = t.val - costBasisForThisSell;
+
+                            // ONLY add to the weekly report if this SELL happened during the selected week
+                            if (isTradeInSelectedWeek) {
+                                totalPnl += realizedProfit;
+                            }
+                        }
+                    });
+
+                    const netCol = totalPnl - tb; // Total Profit minus Brokerage
+
+                    const ctDescendingForDisplay = [...ct].reverse();
+
+                    return { client, ct: ctDescendingForDisplay, tb, bv, sv, net: sv - bv, totalPnl, netCol };
+                }).filter(r => r.ct.length > 0);
+            }, [clients, trades, sc, selWeek]);
+
+            return (
+                <div>
+                    <div className="ph">
+                        <div><h2>Weekly Reports 📅</h2><p>Client-wise billing and trade reports (Monday - Sunday)</p></div>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <select style={{ padding: '9px 13px', minWidth: 200 }} value={sw} onChange={e => setSw(e.target.value)}>
+                                <option value="">All Time</option>
+                                {weeks.map(w => <option key={w.id} value={w.id}>{w.label}</option>)}
+                            </select>
+                            <select style={{ padding: '9px 13px', minWidth: 200 }} value={sc} onChange={e => setSc(e.target.value)}>
+                                <option value="all">All Clients</option>
+                                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                            <button className="btn btn-o" onClick={() => window.print()}>🖨️ Print Report</button>
+                        </div>
+                    </div>
+                    {!reportData.length ? <div className="empty"><div className="ei">📅</div><h3>No activity found</h3><p>No trades matches the selected period and client</p></div> :
+                        reportData.map(r => (
+                            <div key={r.client.id} className="card" style={{ marginBottom: 26 }}>
+                                <div className="ch">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                        <div className="av" style={{ background: ac(r.client.name), width: 44, height: 44, fontSize: '1rem', flexShrink: 0 }}>{ini(r.client.name)}</div>
+                                        <div><div className="ct" style={{ fontSize: '1.05rem' }}>{r.client.name}</div><div className="cs">{selWeek ? selWeek.label : 'All Time'} · Brokerage Rate: {r.client.bRate}%</div></div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--amber)' }}>{fmt(r.tb)}</div>
+                                        <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>Total Brokerage Payable</div>
+                                    </div>
+                                </div>
+                                <div className="cb">
+                                    <div className="sgrid" style={{ marginBottom: 16 }}>
+                                        <div className="scard" style={{ padding: 16 }}><div className="sl">Total Realized P&L</div><div className="sv" style={{ fontSize: '1.3rem', color: r.totalPnl >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 4 }}>{r.totalPnl >= 0 ? '+' : ''}{fmt(r.totalPnl)}</div></div>
+                                        <div className="scard" style={{ padding: 16 }}><div className="sl">Total Brokerage</div><div className="sv" style={{ fontSize: '1.3rem', color: 'var(--amber)', marginTop: 4 }}>-{fmt(r.tb)}</div></div>
+                                        <div className="scard" style={{ padding: 16, border: '1px solid var(--blue)' }}>
+                                            <div className="sl" style={{ color: 'var(--text)', fontWeight: 700 }}>{r.netCol >= 0 ? 'Broker to Pay Client' : 'Client to Pay Broker'}</div>
+                                            <div className="sv" style={{ fontSize: '1.4rem', color: r.netCol >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 4 }}>{fmt(Math.abs(r.netCol))}</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '.85rem', fontWeight: 700, marginBottom: 8, color: 'var(--muted)' }}>Transactions in Period</div>
+                                    <TT trades={r.ct} compact />
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            );
+        }
+
+        // ── App ──
+        function App() {
+            const [pg, setPg] = useState('dashboard');
+            const [loading, setLoading] = useState(true);
+            const { ts, add, rm } = useToast();
+            const [clients, setClients] = useState([]);
+            const [trades, setTrades] = useState([]);
+            const [dbReady, setDbReady] = useState(!!window.__firebaseDB);
+
+            useEffect(() => {
+                if (!window.__firebaseDB) {
+                    const handleReady = () => setDbReady(true);
+                    window.addEventListener('firebase-ready', handleReady);
+                    return () => window.removeEventListener('firebase-ready', handleReady);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (!dbReady) return;
+                const db = window.__firebaseDB;
+                const m = window.__firebaseMethods;
+                const unsubC = m.onSnapshot(m.collection(db, 'clients'), snap => {
+                    const cList = snap.docs.map(doc => ({ ...doc.data(), fsId: doc.id }));
+                    setClients(cList);
+                });
+                const unsubT = m.onSnapshot(m.query(m.collection(db, 'trades'), m.orderBy('at', 'desc')), snap => {
+                    const tList = snap.docs.map(doc => ({ ...doc.data(), fsId: doc.id }));
+                    setTrades(tList);
+                    setLoading(false);
+                }, err => {
+                    console.warn(err);
+                    setLoading(false);
+                });
+                return () => { unsubC(); unsubT(); };
+            }, [dbReady]);
+
+            const addClient = useCallback(async d => {
+                const n = { ...d, id: d.id || ('C' + gid()) };
+                setClients(p => [...p, n]);
+                const m = window.__firebaseMethods;
+                await m.addDoc(m.collection(window.__firebaseDB, 'clients'), n);
+                add(`Client "${d.name}" added ✅`, 's');
+            }, [add]);
+
+            const editClient = useCallback(async d => {
+                setClients(p => p.map(c => c.id === d.id ? { ...c, ...d } : c));
+                const m = window.__firebaseMethods;
+                await m.updateDoc(m.doc(window.__firebaseDB, 'clients', d.fsId), d);
+                add(`Client "${d.name}" updated ✅`, 's');
+            }, [add]);
+
+            const delClient = useCallback(async id => {
+                if (!window.confirm('Delete this client?')) return;
+                const c = clients.find(x => x.id === id);
+                setClients(p => p.filter(x => x.id !== id));
+                if (c && c.fsId) {
+                    const m = window.__firebaseMethods;
+                    await m.deleteDoc(m.doc(window.__firebaseDB, 'clients', c.fsId));
+                }
+                add('Client deleted', 'i');
+            }, [add, clients]);
+
+            const addTrade = useCallback(async d => {
+                const n = { ...d, id: 'T' + gid() };
+                setTrades(p => [n, ...p]);
+                const m = window.__firebaseMethods;
+                const fireDt = d.at && d.at.toDate ? m.Timestamp.fromDate(d.at.toDate()) : m.Timestamp.now();
+                try {
+                    const docRef = await m.addDoc(m.collection(window.__firebaseDB, 'trades'), { ...n, at: fireDt });
+                    setTrades(p => p.map(t => t.id === n.id ? { ...t, fsId: docRef.id } : t));
+                } catch (e) { }
+                add(`${d.type.toUpperCase()} ${d.qty} ${d.sym} recorded ✅`, 's');
+            }, [add]);
+
+            const editTrade = useCallback(async d => {
+                setTrades(p => p.map(t => t.id === d.id ? { ...t, ...d } : t));
+                const m = window.__firebaseMethods;
+                const fireDt = d.at && d.at.toDate ? m.Timestamp.fromDate(d.at.toDate()) : m.Timestamp.now();
+                const updateData = { ...d, at: fireDt };
+                if (d.fsId) await m.updateDoc(m.doc(window.__firebaseDB, 'trades', d.fsId), updateData);
+                add(`Trade updated ✅`, 's');
+            }, [add]);
+
+            const delTrade = useCallback(async id => {
+                if (!window.confirm('Delete this trade?')) return;
+                const t = trades.find(x => x.id === id);
+                setTrades(p => p.filter(x => x.id !== id));
+                if (t && t.fsId) {
+                    const m = window.__firebaseMethods;
+                    await m.deleteDoc(m.doc(window.__firebaseDB, 'trades', t.fsId));
+                }
+                add('Trade deleted', 'i');
+            }, [add, trades]);
+
+            const titles = { dashboard: 'Dashboard', clients: 'Clients', trade: 'New Trade', trades: 'Trade History', portfolio: 'Portfolio', brokerage: 'Brokerage Report', reports: 'Weekly Reports' };
+            const subs = { dashboard: 'Welcome back, Broker!', clients: 'Manage your client base', trade: 'Record a new transaction', trades: 'All transactions', portfolio: 'Client stock holdings', brokerage: 'Earnings overview', reports: 'Client-wise billing and reports' };
+
+            if (loading) return (<div className="loader"><div style={{ fontSize: '1.4rem', fontWeight: 800, background: 'linear-gradient(135deg,#4f8ef7,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>📈 StockDesk Pro</div><div className="lsp" /><div style={{ color: 'var(--dim)', fontSize: '.8rem' }}>Loading your dashboard...</div></div>);
+
+            return (<div className="layout">
+                <Sidebar pg={pg} set={setPg} tc={trades.length} />
+                <div className="main">
+                    <div className="topbar">
+                        <div><h2>{titles[pg]}</h2><p>{subs[pg]}</p></div>
+                        <div className="topbar-r">
+                            <button className="btn btn-p btn-sm" onClick={() => setPg('trade')}>＋ New Trade</button>
+                            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,#4f8ef7,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '.82rem' }}>B</div>
+                        </div>
+                    </div>
+                    <div className="page">
+                        {pg === 'dashboard' && <Dashboard clients={clients} trades={trades} sp={setPg} />}
+                        {pg === 'clients' && <Clients clients={clients} trades={trades} add={addClient} edit={editClient} del={delClient} />}
+                        {pg === 'trade' && <Trade clients={clients} addTrade={addTrade} sp={setPg} trades={trades} />}
+                        {pg === 'trades' && <Trades trades={trades} clients={clients} del={delTrade} edit={editTrade} />}
+                        {pg === 'portfolio' && <Portfolio clients={clients} trades={trades} />}
+                        {pg === 'brokerage' && <Brokerage trades={trades} clients={clients} />}
+                        {pg === 'reports' && <Reports trades={trades} clients={clients} />}
+                    </div>
+                </div>
+                <Toasts ts={ts} rm={rm} />
+            </div>);
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+
+</html>
