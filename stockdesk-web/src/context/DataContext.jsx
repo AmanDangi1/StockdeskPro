@@ -30,6 +30,9 @@ export const DataProvider = ({ children }) => {
 
         const unsubC = onSnapshot(clientsCol, snap => {
             setClients(snap.docs.map(d => ({ ...d.data(), fsId: d.id })));
+        }, err => {
+            console.error('Clients listener error:', err);
+            add(`Database Error (Clients): ${err.message}`, 'e');
         });
 
         const unsubT = onSnapshot(query(tradesCol, orderBy('at', 'desc')), snap => {
@@ -37,6 +40,7 @@ export const DataProvider = ({ children }) => {
             setLoading(false);
         }, err => {
             console.error('Trades listener error:', err);
+            add(`Database Error (Trades): ${err.message}`, 'e');
             setLoading(false);
         });
 
@@ -46,57 +50,87 @@ export const DataProvider = ({ children }) => {
 
     // ─── Clients ───────────────────────────────────────────────────────────────
     const addClient = useCallback(async d => {
-        if (!clientsCol) return;
+        if (!user) return;
         const n = { ...d, id: d.id || ('C' + gid()) };
-        setClients(p => [...p, n]);
-        await addDoc(clientsCol, n);
-        add(`Client "${d.name}" added ✅`, 's');
+        try {
+            const colRef = collection(db, 'users', user.uid, 'clients');
+            await addDoc(colRef, n);
+            add(`Client "${d.name}" added ✅`, 's');
+        } catch (e) {
+            console.error('Error adding client:', e);
+            add(`Failed to add client: ${e.message}`, 'e');
+        }
     }, [add, user?.uid]);
 
     const editClient = useCallback(async d => {
-        if (!user) return;
-        setClients(p => p.map(c => c.id === d.id ? { ...c, ...d } : c));
-        await updateDoc(doc(db, 'users', user.uid, 'clients', d.fsId), d);
-        add(`Client "${d.name}" updated ✅`, 's');
+        if (!user || !d.fsId) return;
+        try {
+            const docRef = doc(db, 'users', user.uid, 'clients', d.fsId);
+            const { fsId, ...updateData } = d;
+            await updateDoc(docRef, updateData);
+            add(`Client "${d.name}" updated ✅`, 's');
+        } catch (e) {
+            console.error('Error updating client:', e);
+            add(`Failed to update client: ${e.message}`, 'e');
+        }
     }, [add, user?.uid]);
 
     const delClient = useCallback(async id => {
         if (!user) return;
         if (!window.confirm('Delete this client and all their trades?')) return;
         const c = clients.find(x => x.id === id);
-        setClients(p => p.filter(x => x.id !== id));
-        if (c?.fsId) await deleteDoc(doc(db, 'users', user.uid, 'clients', c.fsId));
-        add('Client deleted', 'i');
+        if (!c?.fsId) return;
+        try {
+            await deleteDoc(doc(db, 'users', user.uid, 'clients', c.fsId));
+            add('Client deleted', 'i');
+        } catch (e) {
+            console.error('Error deleting client:', e);
+            add(`Failed to delete client: ${e.message}`, 'e');
+        }
     }, [add, clients, user?.uid]);
 
     // ─── Trades ────────────────────────────────────────────────────────────────
     const addTrade = useCallback(async d => {
-        if (!tradesCol) return;
+        if (!user) return;
         const n = { ...d, id: 'T' + gid() };
-        setTrades(p => [n, ...p]);
         const fireDt = d.at?.toDate ? Timestamp.fromDate(d.at.toDate()) : Timestamp.now();
+        const { at, ...tradeData } = n;
         try {
-            const docRef = await addDoc(tradesCol, { ...n, at: fireDt });
-            setTrades(p => p.map(t => t.id === n.id ? { ...t, fsId: docRef.id } : t));
-        } catch (e) { console.error(e); }
-        add(`${d.type.toUpperCase()} ${d.qty} ${d.sym} recorded ✅`, 's');
+            const colRef = collection(db, 'users', user.uid, 'trades');
+            await addDoc(colRef, { ...tradeData, at: fireDt });
+            add(`${d.type.toUpperCase()} ${d.qty} ${d.sym} recorded ✅`, 's');
+        } catch (e) {
+            console.error('Error adding trade:', e);
+            add(`Failed to record trade: ${e.message}`, 'e');
+        }
     }, [add, user?.uid]);
 
     const editTrade = useCallback(async d => {
-        if (!user) return;
-        setTrades(p => p.map(t => t.id === d.id ? { ...t, ...d } : t));
+        if (!user || !d.fsId) return;
         const fireDt = d.at?.toDate ? Timestamp.fromDate(d.at.toDate()) : Timestamp.now();
-        if (d.fsId) await updateDoc(doc(db, 'users', user.uid, 'trades', d.fsId), { ...d, at: fireDt });
-        add('Trade updated ✅', 's');
+        const { fsId, at, ...tradeData } = d;
+        try {
+            const docRef = doc(db, 'users', user.uid, 'trades', d.fsId);
+            await updateDoc(docRef, { ...tradeData, at: fireDt });
+            add('Trade updated ✅', 's');
+        } catch (e) {
+            console.error('Error updating trade:', e);
+            add(`Failed to update trade: ${e.message}`, 'e');
+        }
     }, [add, user?.uid]);
 
     const delTrade = useCallback(async id => {
         if (!user) return;
         if (!window.confirm('Delete this trade?')) return;
         const t = trades.find(x => x.id === id);
-        setTrades(p => p.filter(x => x.id !== id));
-        if (t?.fsId) await deleteDoc(doc(db, 'users', user.uid, 'trades', t.fsId));
-        add('Trade deleted', 'i');
+        if (!t?.fsId) return;
+        try {
+            await deleteDoc(doc(db, 'users', user.uid, 'trades', t.fsId));
+            add('Trade deleted', 'i');
+        } catch (e) {
+            console.error('Error deleting trade:', e);
+            add(`Failed to delete trade: ${e.message}`, 'e');
+        }
     }, [add, trades, user?.uid]);
 
     return (

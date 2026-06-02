@@ -35,6 +35,25 @@ const firebaseConfig = {
 Simply double-click `index.html` to open in your browser!
 (Or drag it to Chrome/Edge/Firefox)
 
+## Step 6: Configure Firestore Security Rules
+To prevent data from vanishing, you must configure Firestore Security Rules to allow reads/writes for logged-in users under their specific user IDs.
+
+1. Go to the **Firebase Console** → click **"Firestore Database"**.
+2. Click the **"Rules"** tab.
+3. Replace the existing rules with the following rules:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       // Secure user-scoped data collections
+       match /users/{userId}/{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+4. Click **"Publish"** to deploy the rules.
+
 ---
 
 ## 📊 Collections Created in Firestore
