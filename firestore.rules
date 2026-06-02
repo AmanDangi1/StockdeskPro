@@ -1,9 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Secure user-scoped data collections
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Open rules for development (allows any user to read/write any data)
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
