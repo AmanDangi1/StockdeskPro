@@ -59,9 +59,9 @@ function useFirestore() {
 
 // ── Local Demo Mode (when Firebase not configured) ────
 const DEMO_CLIENTS = [
-  { id: 'C001', name: 'Rajesh Patel', phone: '9876543210', email: 'rajesh@example.com', pan: 'ABCDE1234F', status: 'active', brokerageRate: 0.5, notes: 'Regular trader' },
-  { id: 'C002', name: 'Priya Sharma', phone: '9123456789', email: 'priya@example.com', pan: 'FGHIJ5678K', status: 'active', brokerageRate: 0.3, notes: 'Long-term investor' },
-  { id: 'C003', name: 'Amit Mehta', phone: '9988776655', email: 'amit@example.com', pan: 'KLMNO9012P', status: 'active', brokerageRate: 0.4, notes: '' },
+  { id: 'C001', name: 'Rajesh Patel', phone: '9876543210', email: 'rajesh@example.com', pan: 'ABCDE1234F', status: 'active', brokerageRate: 0.5, notes: 'Regular trader', cNo: '01' },
+  { id: 'C002', name: 'Priya Sharma', phone: '9123456789', email: 'priya@example.com', pan: 'FGHIJ5678K', status: 'active', brokerageRate: 0.3, notes: 'Long-term investor', cNo: '02' },
+  { id: 'C003', name: 'Amit Mehta', phone: '9988776655', email: 'amit@example.com', pan: 'KLMNO9012P', status: 'active', brokerageRate: 0.4, notes: '', cNo: '03' },
 ];
 const now = () => ({ toDate: () => new Date() });
 const DEMO_TRADES = [
@@ -221,7 +221,8 @@ function ClientsPage({ clients, trades, addClient, editClient, deleteClient }) {
 
   const filtered = useMemo(() => clients.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone?.includes(search) || c.email?.toLowerCase().includes(search.toLowerCase())
+    c.phone?.includes(search) || c.email?.toLowerCase().includes(search.toLowerCase()) ||
+    c.cNo?.toLowerCase().includes(search.toLowerCase())
   ), [clients, search]);
 
   const openEdit = (c) => { setEditing(c); setShowModal(true); };
@@ -259,7 +260,7 @@ function ClientsPage({ clients, trades, addClient, editClient, deleteClient }) {
                 <div className="client-card-header">
                   <div className="client-avatar" style={{ background: getAvatarColor(c.name) }}>{initials(c.name)}</div>
                   <div>
-                    <div className="client-card-name">{c.name}</div>
+                    <div className="client-card-name">{c.name} {c.cNo && <span style={{ color: 'var(--accent-amber)', fontSize: '0.75rem', marginLeft: 6 }}>({c.cNo})</span>}</div>
                     <div className="client-card-id">ID: {c.id} · <span className={`badge badge-${c.status}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>{c.status}</span></div>
                   </div>
                 </div>
@@ -283,24 +284,39 @@ function ClientsPage({ clients, trades, addClient, editClient, deleteClient }) {
           })}
         </div>
       )}
-      {showModal && <ClientModal initial={editing} onSave={editing ? editClient : addClient} onClose={() => setShowModal(false)} />}
+      {showModal && <ClientModal clients={clients} initial={editing} onSave={editing ? editClient : addClient} onClose={() => setShowModal(false)} />}
     </div>
   );
 }
 
-function ClientModal({ initial, onSave, onClose }) {
+function ClientModal({ clients, initial, onSave, onClose }) {
   const [form, setForm] = useState({
     name: initial?.name || '', phone: initial?.phone || '',
     email: initial?.email || '', pan: initial?.pan || '',
-    brokerageRate: initial?.brokerageRate || 0.5,
-    status: initial?.status || 'active', notes: initial?.notes || ''
+    brokerageRate: initial?.brokerageRate !== undefined && initial?.brokerageRate !== null ? initial.brokerageRate : 0.5,
+    status: initial?.status || 'active', notes: initial?.notes || '',
+    cNo: initial?.cNo || ''
   });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    if (!initial && clients) {
+      let maxNo = 0;
+      clients.forEach(x => {
+        const val = parseInt(x.cNo, 10);
+        if (!isNaN(val) && val > maxNo) {
+          maxNo = val;
+        }
+      });
+      const nextNo = String(maxNo + 1).padStart(2, '0');
+      set('cNo', nextNo);
+    }
+  }, [initial, clients]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    onSave({ ...initial, ...form, brokerageRate: parseFloat(form.brokerageRate) });
+    onSave({ ...initial, ...form, brokerageRate: parseFloat(form.brokerageRate) || 0 });
     onClose();
   };
 
@@ -315,12 +331,13 @@ function ClientModal({ initial, onSave, onClose }) {
           <div className="modal-body">
             <div className="form-grid">
               <div className="form-group full"><label>Full Name *</label><input required value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Rahul Sharma" /></div>
+              <div className="form-group"><label>Client Number (e.g. 01, 02) *</label><input required value={form.cNo} onChange={e => set('cNo', e.target.value)} placeholder="e.g. 01" /></div>
               <div className="form-group"><label>Phone Number</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="9876543210" /></div>
               <div className="form-group"><label>Email Address</label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="email@example.com" /></div>
               <div className="form-group"><label>PAN Number</label><input value={form.pan} onChange={e => set('pan', e.target.value.toUpperCase())} placeholder="ABCDE1234F" maxLength={10} /></div>
               <div className="form-group"><label>Brokerage Rate (%)</label>
                 <div className="input-group">
-                  <input type="number" step="0.01" min="0" max="5" value={form.brokerageRate} onChange={e => set('brokerageRate', e.target.value)} />
+                  <input type="number" step="any" min="0" max="100" value={form.brokerageRate} onChange={e => set('brokerageRate', e.target.value)} />
                   <span className="input-suffix">%</span>
                 </div>
               </div>
@@ -362,13 +379,39 @@ function TradePage({ clients, addTrade, setPage }) {
   });
   const [stockSearch, setStockSearch] = useState('');
   const [showStockList, setShowStockList] = useState(false);
+  const [cSearch, setCSearch] = useState('');
+  const [showCDrop, setShowCDrop] = useState(false);
+
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === '+' || e.key === 'Add') {
+        e.preventDefault();
+        set('type', 'buy');
+      } else if (e.key === '-' || e.key === 'Subtract') {
+        e.preventDefault();
+        set('type', 'sell');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const selected = clients.find(c => c.id === form.clientId);
+    if (selected) {
+      setCSearch(selected.cNo ? `${selected.cNo} - ${selected.name}` : selected.name);
+    } else {
+      setCSearch('');
+    }
+  }, [form.clientId, clients]);
 
   const selectedClient = clients.find(c => c.id === form.clientId);
   const qty = parseFloat(form.quantity) || 0;
   const rate = parseFloat(form.rate) || 0;
   const tradeValue = qty * rate;
-  const brokerageRate = selectedClient?.brokerageRate || 0.5;
+  const brokerageRate = selectedClient?.brokerageRate !== undefined ? selectedClient.brokerageRate : 0.5;
   const calcBrokerage = form.brokerageOverride !== '' ? parseFloat(form.brokerageOverride) : (tradeValue * brokerageRate / 100);
   const totalWithBrokerage = form.type === 'buy' ? tradeValue + calcBrokerage : tradeValue - calcBrokerage;
 
@@ -395,7 +438,17 @@ function TradePage({ clients, addTrade, setPage }) {
       totalValue: tradeValue,
       netAmount: totalWithBrokerage,
     });
-    setPage('trades');
+    
+    // Clear trade inputs to allow sequential entries without closing
+    setForm(prev => ({
+      ...prev,
+      stockSymbol: '',
+      stockName: '',
+      quantity: '',
+      rate: '',
+      brokerageOverride: ''
+    }));
+    setStockSearch('');
   };
 
   return (
@@ -419,12 +472,78 @@ function TradePage({ clients, addTrade, setPage }) {
                 </div>
 
                 {/* Client */}
-                <div className="form-group full">
+                <div className="form-group full" style={{ position: 'relative' }}>
                   <label>Select Client *</label>
-                  <select required value={form.clientId} onChange={e => set('clientId', e.target.value)}>
-                    <option value="">— Choose a client —</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name} (Brokerage: {c.brokerageRate}%)</option>)}
-                  </select>
+                  <input
+                    required
+                    value={cSearch}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCSearch(val);
+                      setShowCDrop(true);
+                      
+                      const exact = clients.find(c => c.cNo && c.cNo.toLowerCase().trim() === val.toLowerCase().trim());
+                      if (exact) {
+                        set('clientId', exact.id);
+                        setShowCDrop(false);
+                      } else {
+                        if (!val) set('clientId', '');
+                      }
+                    }}
+                    onFocus={e => {
+                      setShowCDrop(true);
+                      e.target.select();
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowCDrop(false), 200);
+                    }}
+                    placeholder="Type client name or number (e.g. 01)..."
+                    autoComplete="off"
+                  />
+                  {showCDrop && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      zIndex: 300,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+                    }}>
+                      {clients.filter(c => {
+                        if (!cSearch) return true;
+                        const query = cSearch.toLowerCase();
+                        const nameMatch = c.name.toLowerCase().includes(query);
+                        const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                        const idMatch = c.id && c.id.toLowerCase().includes(query);
+                        return nameMatch || cNoMatch || idMatch;
+                      }).map(c => (
+                        <div key={c.id} onMouseDown={() => {
+                          set('clientId', c.id);
+                          setShowCDrop(false);
+                        }} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)', transition: 'var(--transition)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,0.08)'}
+                          onMouseLeave={e => e.currentTarget.style.background = ''}>
+                          <strong style={{ color: 'var(--accent-blue)' }}>{c.cNo ? `${c.cNo} - ` : ''}{c.name}</strong>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: 8 }}>(Brokerage: {c.brokerageRate}%)</span>
+                        </div>
+                      ))}
+                      {clients.filter(c => {
+                        if (!cSearch) return true;
+                        const query = cSearch.toLowerCase();
+                        const nameMatch = c.name.toLowerCase().includes(query);
+                        const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                        const idMatch = c.id && c.id.toLowerCase().includes(query);
+                        return nameMatch || cNoMatch || idMatch;
+                      }).length === 0 && (
+                        <div style={{ padding: '10px 14px', color: 'var(--text-muted)', textAlign: 'center' }}>No matching clients</div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Stock Symbol */}
@@ -475,7 +594,7 @@ function TradePage({ clients, addTrade, setPage }) {
                   <label>Override Brokerage (₹) <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>optional</span></label>
                   <div className="input-group">
                     <span className="input-prefix">₹</span>
-                    <input type="number" step="0.01" min="0" value={form.brokerageOverride} onChange={e => set('brokerageOverride', e.target.value)} placeholder="Leave blank to auto-calc" />
+                    <input type="number" step="any" min="0" value={form.brokerageOverride} onChange={e => set('brokerageOverride', e.target.value)} placeholder="Leave blank to auto-calc" />
                   </div>
                 </div>
               </div>
@@ -562,12 +681,23 @@ function PortfolioPage({ clients, trades }) {
       const ct = trades.filter(t => t.clientId === client.id);
       const holdings = {};
       ct.forEach(t => {
-        if (!holdings[t.stockSymbol]) holdings[t.stockSymbol] = { symbol: t.stockSymbol, name: t.stockName, qty: 0, buyValue: 0, sellValue: 0, brokerage: 0 };
-        if (t.type === 'buy') { holdings[t.stockSymbol].qty += t.quantity; holdings[t.stockSymbol].buyValue += t.totalValue; }
-        else { holdings[t.stockSymbol].qty -= t.quantity; holdings[t.stockSymbol].sellValue += t.totalValue; }
+        if (!holdings[t.stockSymbol]) holdings[t.stockSymbol] = { symbol: t.stockSymbol, name: t.stockName, qty: 0, buyValue: 0, sellValue: 0, brokerage: 0, buyQty: 0 };
+        if (t.type === 'buy') { 
+          holdings[t.stockSymbol].qty += t.quantity; 
+          holdings[t.stockSymbol].buyValue += t.totalValue; 
+          holdings[t.stockSymbol].buyQty += t.quantity;
+        } else { 
+          holdings[t.stockSymbol].qty -= t.quantity; 
+          holdings[t.stockSymbol].sellValue += t.totalValue; 
+        }
         holdings[t.stockSymbol].brokerage += t.brokerage || 0;
       });
-      const holdingsList = Object.values(holdings);
+      const holdingsList = Object.values(holdings).map(h => {
+        const ab = h.buyValue > 0 ? (h.buyValue / (h.buyQty || 1)) : 0;
+        const inv = h.qty > 0 ? h.qty * ab : 0;
+        const rpl = h.qty === 0 ? (h.sellValue - h.buyValue) : (h.sellValue - (h.buyValue - inv));
+        return { ...h, ab, inv, rpl };
+      });
       const totalBrokerageEarned = ct.reduce((s, t) => s + (t.brokerage || 0), 0);
       return { client, holdings: holdingsList, totalBrokerageEarned, tradeCount: ct.length };
     });
@@ -585,45 +715,62 @@ function PortfolioPage({ clients, trades }) {
       {portfolioData.length === 0 ? (
         <div className="empty-state"><div className="empty-icon">💼</div><h3>No portfolio data</h3><p>Add clients and trades to see portfolio</p></div>
       ) : (
-        portfolioData.map(({ client, holdings, totalBrokerageEarned, tradeCount }) => (
-          <div key={client.id} style={{ marginBottom: 28 }}>
-            <div className="portfolio-header">
-              <div className="portfolio-avatar" style={{ background: getAvatarColor(client.name) }}>{initials(client.name)}</div>
-              <div>
-                <div className="portfolio-client-name">{client.name}</div>
-                <div className="portfolio-client-meta">ID: {client.id} · {tradeCount} trades · PAN: {client.pan || '—'}</div>
+        portfolioData.map(({ client, holdings, totalBrokerageEarned, tradeCount }) => {
+          const totalInv = holdings.reduce((s, x) => s + x.inv, 0);
+          const totalRpl = holdings.reduce((s, x) => s + x.rpl, 0);
+          return (
+            <div key={client.id} style={{ marginBottom: 28 }}>
+              <div className="portfolio-header">
+                <div className="portfolio-avatar" style={{ background: getAvatarColor(client.name) }}>{initials(client.name)}</div>
+                <div>
+                  <div className="portfolio-client-name">{client.name}</div>
+                  <div className="portfolio-client-meta">ID: {client.id} · {tradeCount} trades · PAN: {client.pan || '—'}</div>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '24px', textAlign: 'right' }}>
+                  <div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{fmt(totalInv)}</div>
+                    <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>Net Investment</div>
+                  </div>
+                  <div>
+                    <div style={{ 
+                      fontSize: '1.3rem', 
+                      fontWeight: 800, 
+                      color: totalRpl > 0 ? 'var(--accent-green)' : totalRpl < 0 ? 'var(--accent-red)' : 'var(--text-muted)' 
+                    }}>
+                      {totalRpl > 0 ? '+' : ''}{fmt(totalRpl)}
+                    </div>
+                    <div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>Realized P&L</div>
+                  </div>
+                </div>
               </div>
-              <div className="portfolio-pnl">
-                <div className="portfolio-pnl-value" style={{ color: 'var(--accent-amber)' }}>{fmt(totalBrokerageEarned)}</div>
-                <div className="portfolio-pnl-label">Total Brokerage</div>
-              </div>
+              {holdings.length === 0 ? (
+                <div className="empty-state" style={{ padding: 30 }}><p>No holdings recorded</p></div>
+              ) : (
+                <div className="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr><th>Symbol</th><th>Company</th><th>Net Qty</th><th>Avg Buy</th><th>Invested</th><th>Realized P&L</th></tr>
+                    </thead>
+                    <tbody>
+                      {holdings.map(h => (
+                        <tr key={h.symbol}>
+                          <td><strong style={{ color: 'var(--accent-blue)' }}>{h.symbol}</strong></td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{h.name}</td>
+                          <td><strong style={{ color: h.qty > 0 ? 'var(--accent-green)' : h.qty < 0 ? 'var(--accent-red)' : 'var(--text-muted)' }}>{fmtQty(h.qty)}</strong></td>
+                          <td>{fmt(h.ab)}</td>
+                          <td>{fmt(h.inv)}</td>
+                          <td style={{ fontWeight: 700, color: h.rpl > 0 ? 'var(--accent-green)' : h.rpl < 0 ? 'var(--accent-red)' : 'var(--text-muted)' }}>
+                            {h.rpl > 0 ? '+' : ''}{fmt(h.rpl)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-            {holdings.length === 0 ? (
-              <div className="empty-state" style={{ padding: 30 }}><p>No holdings recorded</p></div>
-            ) : (
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr><th>Symbol</th><th>Company</th><th>Net Qty</th><th>Buy Value</th><th>Sell Value</th><th>Brokerage</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    {holdings.map(h => (
-                      <tr key={h.symbol}>
-                        <td><strong style={{ color: 'var(--accent-blue)' }}>{h.symbol}</strong></td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{h.name}</td>
-                        <td><strong style={{ color: h.qty > 0 ? 'var(--accent-green)' : h.qty < 0 ? 'var(--accent-red)' : 'var(--text-muted)' }}>{fmtQty(h.qty)}</strong></td>
-                        <td>{fmt(h.buyValue)}</td>
-                        <td>{fmt(h.sellValue)}</td>
-                        <td style={{ color: 'var(--accent-amber)' }}>{fmt(h.brokerage)}</td>
-                        <td><span className={`badge ${h.qty > 0 ? 'badge-buy' : h.qty === 0 ? 'badge-pending' : 'badge-sell'}`}>{h.qty > 0 ? 'HOLDING' : h.qty === 0 ? 'CLOSED' : 'SHORT'}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );

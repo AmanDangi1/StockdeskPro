@@ -12,12 +12,23 @@ export default function Portfolio() {
             const ct = trades.filter(t => t.cid === client.id);
             const h = {};
             ct.forEach(t => {
-                if (!h[t.sym]) h[t.sym] = { sym: t.sym, sn: t.sn, qty: 0, bv: 0, sv: 0, brok: 0 };
-                if (t.type === 'buy') { h[t.sym].qty += t.qty; h[t.sym].bv += t.val; }
-                else { h[t.sym].qty -= t.qty; h[t.sym].sv += t.val; }
+                if (!h[t.sym]) h[t.sym] = { sym: t.sym, sn: t.sn, qty: 0, bv: 0, sv: 0, brok: 0, buyQty: 0 };
+                if (t.type === 'buy') { 
+                    h[t.sym].qty += t.qty; 
+                    h[t.sym].bv += t.val;
+                    h[t.sym].buyQty += t.qty;
+                } else { 
+                    h[t.sym].qty -= t.qty; 
+                    h[t.sym].sv += t.val; 
+                }
                 h[t.sym].brok += t.brok || 0;
             });
-            const hl = Object.values(h).filter(x => x.qty !== 0 || x.bv > 0 || x.sv > 0);
+            const hl = Object.values(h).map(x => {
+                const ab = x.bv > 0 ? (x.bv / (x.buyQty || 1)) : 0;
+                const inv = x.qty > 0 ? x.qty * ab : 0;
+                const rpl = x.qty === 0 ? (x.sv - x.bv) : (x.sv - (x.bv - inv));
+                return { ...x, ab, inv, rpl };
+            }).filter(x => x.qty !== 0 || x.bv > 0 || x.sv > 0);
             return { c: client, hl };
         }).filter(x => x.hl.length > 0);
     }, [clients, trades, sc]);
@@ -32,32 +43,46 @@ export default function Portfolio() {
                 </select>
             </div>
             {data.length === 0 ? <div className="empty"><div className="ei">💼</div><h3>No holdings</h3><p>Clients have no active positions</p></div> :
-                data.map((d, i) => (
-                    <div key={i} style={{ marginBottom: 30 }}>
-                        <div className="poh">
-                            <div className="poa" style={{ background: ac(d.c.name) }}>{ini(d.c.name)}</div>
-                            <div><div className="pon">{d.c.name}</div><div className="pom">{d.hl.length} stocks traded</div></div>
-                            <div className="pop"><div className="popv">{fmt(d.hl.reduce((s, x) => s + x.bv - x.sv, 0))}</div><div className="popl">Net Investment</div></div>
-                        </div>
-                        <div className="tw"><table>
-                            <thead><tr><th>Stock</th><th>Net Qty</th><th>Avg Buy</th><th>Invested</th><th>Realized P&L</th></tr></thead>
-                            <tbody>{d.hl.map((h, j) => {
-                                const ab = h.bv > 0 ? (h.bv / (trades.filter(t => t.cid === d.c.id && t.sym === h.sym && t.type === 'buy').reduce((s, t) => s + t.qty, 0) || 1)) : 0;
-                                const inv = h.qty > 0 ? h.qty * ab : 0;
-                                const rpl = h.qty === 0 ? (h.sv - h.bv) : (h.sv - (h.bv - inv));
-                                return (
+                data.map((d, i) => {
+                    const totalInv = d.hl.reduce((s, x) => s + x.inv, 0);
+                    const totalRpl = d.hl.reduce((s, x) => s + x.rpl, 0);
+                    return (
+                        <div key={i} style={{ marginBottom: 30 }}>
+                            <div className="poh">
+                                <div className="poa" style={{ background: ac(d.c.name) }}>{ini(d.c.name)}</div>
+                                <div><div className="pon">{d.c.name}</div><div className="pom">{d.hl.length} stocks traded</div></div>
+                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '24px', textAlign: 'right' }}>
+                                    <div>
+                                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)' }}>{fmt(totalInv)}</div>
+                                        <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>Net Investment</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ 
+                                            fontSize: '1.3rem', 
+                                            fontWeight: 800, 
+                                            color: totalRpl > 0 ? 'var(--green)' : totalRpl < 0 ? 'var(--red)' : 'var(--muted)' 
+                                        }}>
+                                            {totalRpl > 0 ? '+' : ''}{fmt(totalRpl)}
+                                        </div>
+                                        <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>Realized P&L</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="tw"><table>
+                                <thead><tr><th>Stock</th><th>Net Qty</th><th>Avg Buy</th><th>Invested</th><th>Realized P&L</th></tr></thead>
+                                <tbody>{d.hl.map((h, j) => (
                                     <tr key={j}>
                                         <td><div style={{ fontWeight: 700, color: 'var(--blue)' }}>{h.sym}</div><div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>{h.sn}</div></td>
                                         <td style={{ fontWeight: 600, color: h.qty > 0 ? 'var(--green)' : h.qty < 0 ? 'var(--red)' : 'var(--text)' }}>{fmtN(h.qty)}</td>
-                                        <td>{fmt(ab)}</td>
-                                        <td>{fmt(inv)}</td>
-                                        <td style={{ fontWeight: 700, color: rpl > 0 ? 'var(--green)' : rpl < 0 ? 'var(--red)' : 'var(--dim)' }}>{rpl > 0 ? '+' : ''}{fmt(rpl)}</td>
+                                        <td>{fmt(h.ab)}</td>
+                                        <td>{fmt(h.inv)}</td>
+                                        <td style={{ fontWeight: 700, color: h.rpl > 0 ? 'var(--green)' : h.rpl < 0 ? 'var(--red)' : 'var(--dim)' }}>{h.rpl > 0 ? '+' : ''}{fmt(h.rpl)}</td>
                                     </tr>
-                                )
-                            })}</tbody>
-                        </table></div>
-                    </div>
-                ))
+                                ))}</tbody>
+                            </table></div>
+                        </div>
+                    );
+                })
             }
         </div>
     );

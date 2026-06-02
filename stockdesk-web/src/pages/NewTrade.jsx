@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { STOCKS, fmt } from '../utils/helpers';
 
@@ -11,12 +11,40 @@ export default function NewTrade({ sp }) {
     const [sq, setSq] = useState('');
     const [sl, setSl] = useState(false);
 
+    const [cSearch, setCSearch] = useState('');
+    const [showCDrop, setShowCDrop] = useState(false);
+
     const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+    // Global keyboard listener for '+' and '-' keys
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === '+' || e.key === 'Add') {
+                e.preventDefault();
+                set('type', 'buy');
+            } else if (e.key === '-' || e.key === 'Subtract') {
+                e.preventDefault();
+                set('type', 'sell');
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Sync client search field when selected client changes
+    useEffect(() => {
+        const selected = clients.find(c => c.id === f.cid);
+        if (selected) {
+            setCSearch(selected.cNo ? `${selected.cNo} - ${selected.name}` : selected.name);
+        } else {
+            setCSearch('');
+        }
+    }, [f.cid, clients]);
 
     const cli = clients.find(c => c.id === f.cid);
     const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
     const val = qty * rate;
-    const br = cli?.bRate || 0.5;
+    const br = cli && (cli.bRate !== undefined && cli.bRate !== null) ? cli.bRate : 0.5;
 
     // STANDARD BROKERAGE CALCULATION: Apply percentage to turnover of this let
     const brok = f.bOvr !== '' ? parseFloat(f.bOvr) : (val * br / 100);
@@ -39,7 +67,17 @@ export default function NewTrade({ sp }) {
             qty, rate, brok, val, net,
             at: { toDate: () => dt }
         });
-        sp('trades');
+        
+        // Clear trade inputs to allow sequential entries without closing
+        setF(prev => ({
+            ...prev,
+            sym: '',
+            sn: '',
+            qty: '',
+            rate: '',
+            bOvr: ''
+        }));
+        setSq('');
     };
 
     return (
@@ -59,12 +97,93 @@ export default function NewTrade({ sp }) {
                                     </div>
                                 </div>
 
-                                <div className="fgrp full">
+                                <div className="fgrp full" style={{ position: 'relative' }}>
                                     <label>Select Client *</label>
-                                    <select required value={f.cid} onChange={e => set('cid', e.target.value)}>
-                                        <option value="">— Choose client —</option>
-                                        {clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}
-                                    </select>
+                                    <input
+                                        required
+                                        value={cSearch}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setCSearch(val);
+                                            setShowCDrop(true);
+                                            
+                                            // Check if exactly matches a client's cNo
+                                            const exact = clients.find(c => c.cNo && c.cNo.toLowerCase().trim() === val.toLowerCase().trim());
+                                            if (exact) {
+                                                set('cid', exact.id);
+                                                setShowCDrop(false);
+                                            } else {
+                                                if (!val) set('cid', '');
+                                            }
+                                        }}
+                                        onFocus={e => {
+                                            setShowCDrop(true);
+                                            e.target.select();
+                                        }}
+                                        onBlur={() => {
+                                            setTimeout(() => setShowCDrop(false), 200);
+                                        }}
+                                        placeholder="Type client name or number (e.g. 01)..."
+                                        autoComplete="off"
+                                    />
+                                    {showCDrop && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            right: 0,
+                                            background: 'var(--card)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 'var(--r)',
+                                            zIndex: 300,
+                                            maxHeight: 200,
+                                            overflowY: 'auto',
+                                            boxShadow: '0 8px 24px rgba(0,0,0,.5)'
+                                        }}>
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                const nameMatch = c.name.toLowerCase().includes(query);
+                                                const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                                                const idMatch = c.id && c.id.toLowerCase().includes(query);
+                                                return nameMatch || cNoMatch || idMatch;
+                                            }).map(c => (
+                                                <div
+                                                    key={c.id}
+                                                    onMouseDown={() => {
+                                                        set('cid', c.id);
+                                                        setShowCDrop(false);
+                                                    }}
+                                                    style={{
+                                                        padding: '9px 13px',
+                                                        cursor: 'pointer',
+                                                        borderBottom: '1px solid var(--border)'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                                                >
+                                                    <strong style={{ color: 'var(--blue)' }}>
+                                                        {c.cNo ? `${c.cNo} - ` : ''}{c.name}
+                                                    </strong>
+                                                    <span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>
+                                                        ({c.bRate}% brokerage)
+                                                    </span>
+                                                </div>
+                                            ))}
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                const nameMatch = c.name.toLowerCase().includes(query);
+                                                const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                                                const idMatch = c.id && c.id.toLowerCase().includes(query);
+                                                return nameMatch || cNoMatch || idMatch;
+                                            }).length === 0 && (
+                                                <div style={{ padding: '9px 13px', color: 'var(--dim)', textAlign: 'center' }}>
+                                                    No matching clients
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="fgrp full" style={{ position: 'relative' }}>
@@ -88,7 +207,7 @@ export default function NewTrade({ sp }) {
 
                                 <div className="fgrp">
                                     <label>Override Brokerage ₹ <span style={{ color: 'var(--dim)', fontWeight: 400 }}>(optional)</span></label>
-                                    <div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" value={f.bOvr} onChange={e => set('bOvr', e.target.value)} placeholder="Leave blank = auto" /></div>
+                                    <div className="ig"><span className="ip">₹</span><input type="number" step="any" min="0" value={f.bOvr} onChange={e => set('bOvr', e.target.value)} placeholder="Leave blank = auto" /></div>
                                 </div>
                             </div>
 

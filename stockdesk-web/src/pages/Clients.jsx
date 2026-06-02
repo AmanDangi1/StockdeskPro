@@ -6,26 +6,50 @@ export default function Clients() {
     const { clients, trades, addClient, editClient, delClient } = useData();
     const [showModal, setShowModal] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
-    const [f, setF] = useState({ name: '', phone: '', email: '', bRate: 0.5 });
+    const [f, setF] = useState({ name: '', phone: '', email: '', bRate: 0.5, cNo: '' });
     const [q, setQ] = useState('');
 
     const set = (k, v) => setF(p => ({ ...p, [k]: v }));
 
     const open = c => {
         setEditTarget(c || null);
-        setF(c ? { name: c.name, phone: c.phone || '', email: c.email || '', bRate: c.bRate || 0.5 }
-            : { name: '', phone: '', email: '', bRate: 0.5 });
+        if (c) {
+            setF({
+                name: c.name,
+                phone: c.phone || '',
+                email: c.email || '',
+                bRate: c.bRate !== undefined && c.bRate !== null ? c.bRate : 0.5,
+                cNo: c.cNo || ''
+            });
+        } else {
+            let maxNo = 0;
+            clients.forEach(x => {
+                const val = parseInt(x.cNo, 10);
+                if (!isNaN(val) && val > maxNo) {
+                    maxNo = val;
+                }
+            });
+            const nextNo = String(maxNo + 1).padStart(2, '0');
+            setF({
+                name: '',
+                phone: '',
+                email: '',
+                bRate: 0.5,
+                cNo: nextNo
+            });
+        }
         setShowModal(true);
     };
 
     const submit = e => {
         e.preventDefault();
-        editTarget ? editClient({ ...editTarget, ...f }) : addClient(f);
+        const clientData = { ...f, bRate: parseFloat(f.bRate) || 0 };
+        editTarget ? editClient({ ...editTarget, ...clientData }) : addClient(clientData);
         setShowModal(false);
     };
 
     const filtered = clients.filter(c =>
-        !q || c.name.toLowerCase().includes(q.toLowerCase()) || c.id?.toLowerCase().includes(q.toLowerCase())
+        !q || c.name.toLowerCase().includes(q.toLowerCase()) || c.id?.toLowerCase().includes(q.toLowerCase()) || c.cNo?.toLowerCase().includes(q.toLowerCase())
     );
 
     return (
@@ -71,8 +95,8 @@ export default function Clients() {
                             <div className="cch">
                                 <div className="av" style={{ background: ac(c.name) }}>{ini(c.name)}</div>
                                 <div>
-                                    <div className="ccn">{c.name}</div>
-                                    <div className="cci">{c.id} • {c.bRate}% brokerage</div>
+                                    <div className="ccn">{c.name} {c.cNo && <span style={{ color: 'var(--amber)', fontSize: '.75rem', marginLeft: 6 }}>({c.cNo})</span>}</div>
+                                    <div className="cci">ID: {c.id} • {c.bRate}% brokerage</div>
                                     {c.phone && <div className="cci" style={{ marginTop: 2 }}>📞 {c.phone}</div>}
                                 </div>
                             </div>
@@ -128,6 +152,10 @@ export default function Clients() {
                                         <input required value={f.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Rajan Mehta" />
                                     </div>
                                     <div className="fgrp">
+                                        <label>Client Number (e.g. 01, 02) *</label>
+                                        <input required value={f.cNo} onChange={e => set('cNo', e.target.value)} placeholder="e.g. 01" />
+                                    </div>
+                                    <div className="fgrp">
                                         <label>Phone Number</label>
                                         <input type="tel" value={f.phone} onChange={e => set('phone', e.target.value)} placeholder="+91 XXXXXXXXXX" />
                                     </div>
@@ -136,12 +164,12 @@ export default function Clients() {
                                         <input type="email" value={f.email} onChange={e => set('email', e.target.value)} placeholder="client@example.com" />
                                     </div>
                                     <div className="fgrp">
-                                        <label>Brokerage Rate (%) *</label>
-                                        <div className="ig">
-                                            <input type="number" step="0.01" min="0.01" max="10" required value={f.bRate} onChange={e => set('bRate', e.target.value)} />
-                                            <span className="is">%</span>
-                                        </div>
-                                    </div>
+                                         <label>Brokerage Rate (%) *</label>
+                                         <div className="ig">
+                                             <input type="number" step="any" min="0" max="100" required value={f.bRate} onChange={e => set('bRate', e.target.value)} />
+                                             <span className="is">%</span>
+                                         </div>
+                                     </div>
                                 </div>
                             </div>
                             <div className="mf">

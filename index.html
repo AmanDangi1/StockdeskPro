@@ -1285,20 +1285,36 @@
         }
 
         // ── Client Modal ──
-        function CM({ init, onSave, onClose }) {
-            const [f, setF] = useState({ name: init?.name || '', phone: init?.phone || '', email: init?.email || '', pan: init?.pan || '', bRate: init?.bRate || 0.5, status: init?.status || 'active', notes: init?.notes || '' });
+        function CM({ clients, init, onSave, onClose }) {
+            const [f, setF] = useState({ name: init?.name || '', phone: init?.phone || '', email: init?.email || '', pan: init?.pan || '', bRate: init && (init.bRate !== undefined && init.bRate !== null) ? init.bRate : 0.5, status: init?.status || 'active', notes: init?.notes || '', cNo: init?.cNo || '' });
             const s = (k, v) => setF(p => ({ ...p, [k]: v }));
-            const sub = e => { e.preventDefault(); if (!f.name.trim()) return; onSave({ ...init, ...f, bRate: parseFloat(f.bRate) }); onClose(); };
+
+            useEffect(() => {
+                if (!init && clients) {
+                    let maxNo = 0;
+                    clients.forEach(x => {
+                        const val = parseInt(x.cNo, 10);
+                        if (!isNaN(val) && val > maxNo) {
+                            maxNo = val;
+                        }
+                    });
+                    const nextNo = String(maxNo + 1).padStart(2, '0');
+                    s('cNo', nextNo);
+                }
+            }, [init, clients]);
+
+            const sub = e => { e.preventDefault(); if (!f.name.trim()) return; onSave({ ...init, ...f, bRate: parseFloat(f.bRate) || 0 }); onClose(); };
             return (<div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
                 <div className="modal">
                     <div className="mh"><div><h3>{init ? '✏️ Edit Client' : '➕ Add Client'}</h3><p>{init ? 'Update client info' : 'Register a new client'}</p></div><button className="mc" onClick={onClose}>✕</button></div>
                     <form onSubmit={sub}><div className="mb">
                         <div className="fg">
                             <div className="fgrp full"><label>Full Name *</label><input required value={f.name} onChange={e => s('name', e.target.value)} placeholder="e.g. Rahul Sharma" /></div>
+                            <div className="fgrp"><label>Client Number (e.g. 01, 02) *</label><input required value={f.cNo} onChange={e => s('cNo', e.target.value)} placeholder="e.g. 01" /></div>
                             <div className="fgrp"><label>Phone</label><input value={f.phone} onChange={e => s('phone', e.target.value)} placeholder="9876543210" /></div>
                             <div className="fgrp"><label>Email</label><input type="email" value={f.email} onChange={e => s('email', e.target.value)} placeholder="email@example.com" /></div>
                             <div className="fgrp"><label>PAN Number</label><input value={f.pan} onChange={e => s('pan', e.target.value.toUpperCase())} placeholder="ABCDE1234F" maxLength={10} /></div>
-                            <div className="fgrp"><label>Brokerage Rate (%)</label><div className="ig"><input type="number" step="0.01" min="0" max="5" value={f.bRate} onChange={e => s('bRate', e.target.value)} /><span className="is">%</span></div></div>
+                            <div className="fgrp"><label>Brokerage Rate (%)</label><div className="ig"><input type="number" step="any" min="0" max="100" value={f.bRate} onChange={e => s('bRate', e.target.value)} /><span className="is">%</span></div></div>
                             <div className="fgrp"><label>Status</label><select value={f.status} onChange={e => s('status', e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
                             <div className="fgrp full"><label>Notes</label><textarea value={f.notes} onChange={e => s('notes', e.target.value)} placeholder="Additional notes..." /></div>
                         </div>
@@ -1312,7 +1328,7 @@
         // ── Clients ──
         function Clients({ clients, trades, add, edit, del }) {
             const [show, setShow] = useState(false); const [ed, setEd] = useState(null); const [q, setQ] = useState('');
-            const fil = useMemo(() => clients.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone?.includes(q) || c.email?.toLowerCase().includes(q.toLowerCase())), [clients, q]);
+            const fil = useMemo(() => clients.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.phone?.includes(q) || c.email?.toLowerCase().includes(q.toLowerCase()) || c.cNo?.toLowerCase().includes(q.toLowerCase())), [clients, q]);
             const ct = cid => trades.filter(t => t.cid === cid);
             const cb = cid => ct(cid).reduce((s, t) => s + (t.brok || 0), 0);
             return (<div>
@@ -1322,21 +1338,21 @@
                     <div className="cgrid">{fil.map(c => {
                         const t2 = ct(c.id); const bk = cb(c.id); return (
                             <div key={c.id} className="cc">
-                                <div className="cch"><div className="av" style={{ background: ac(c.name) }}>{ini(c.name)}</div><div><div className="ccn">{c.name}</div><div className="cci">ID:{c.id} · <span className={`badge ${c.status === 'active' ? 'b-act' : 'b-ina'}`} style={{ fontSize: '.6rem', padding: '1px 5px' }}>{c.status}</span></div></div></div>
+                                <div className="cch"><div className="av" style={{ background: ac(c.name) }}>{ini(c.name)}</div><div><div className="ccn">{c.name} {c.cNo && <span style={{ color: 'var(--amber)', fontSize: '.75rem', marginLeft: 6 }}>({c.cNo})</span>}</div><div className="cci">ID:{c.id} · <span className={`badge ${c.status === 'active' ? 'b-act' : 'b-ina'}`} style={{ fontSize: '.6rem', padding: '1px 5px' }}>{c.status}</span></div></div></div>
                                 <div className="ccs">
                                     <div><div className="csv">{t2.length}</div><div className="csl">Total Trades</div></div>
                                     <div><div className="csv" style={{ color: 'var(--amber)' }}>{fmt(bk)}</div><div className="csl">Brokerage</div></div>
                                     <div><div className="csv" style={{ fontSize: '.8rem' }}>{c.phone || '—'}</div><div className="csl">Phone</div></div>
                                     <div><div className="csv" style={{ fontSize: '.74rem' }}>{c.pan || '—'}</div><div className="csl">PAN</div></div>
                                 </div>
-                                {c.bRate && <div style={{ marginTop: 10, padding: '5px 9px', background: 'rgba(245,158,11,.07)', borderRadius: 8, fontSize: '.72rem', color: 'var(--amber)' }}>💰 Rate: {c.bRate}%</div>}
+                                {c.bRate !== undefined && <div style={{ marginTop: 10, padding: '5px 9px', background: 'rgba(245,158,11,.07)', borderRadius: 8, fontSize: '.72rem', color: 'var(--amber)' }}>💰 Rate: {c.bRate}%</div>}
                                 <div className="ccf">
                                     <button className="btn btn-o btn-sm" style={{ flex: 1 }} onClick={() => { setEd(c); setShow(true); }}>✏️ Edit</button>
                                     <button className="btn btn-o btn-sm" style={{ flex: 1, color: 'var(--red)' }} onClick={() => del(c.id)}>🗑 Delete</button>
                                 </div>
                             </div>);
                     })}</div>}
-                {show && <CM init={ed} onSave={ed ? edit : add} onClose={() => setShow(false)} />}
+                {show && <CM clients={clients} init={ed} onSave={ed ? edit : add} onClose={() => setShow(false)} />}
             </div>);
         }
 
@@ -1347,11 +1363,36 @@
         function Trade({ clients, addTrade, sp, trades }) {
             const [f, setF] = useState({ cid: '', type: 'buy', sym: '', sn: '', qty: '', rate: '', bOvr: '', dateStr: new Date().toISOString().slice(0, 10) });
             const [sq, setSq] = useState(''); const [sl, setSl] = useState(false);
+            const [cSearch, setCSearch] = useState(''); const [showCDrop, setShowCDrop] = useState(false);
             const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === '+' || e.key === 'Add') {
+                        e.preventDefault();
+                        set('type', 'buy');
+                    } else if (e.key === '-' || e.key === 'Subtract') {
+                        e.preventDefault();
+                        set('type', 'sell');
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, []);
+
+            useEffect(() => {
+                const selected = clients.find(c => c.id === f.cid);
+                if (selected) {
+                    setCSearch(selected.cNo ? `${selected.cNo} - ${selected.name}` : selected.name);
+                } else {
+                    setCSearch('');
+                }
+            }, [f.cid, clients]);
+
             const cli = clients.find(c => c.id === f.cid);
             const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
             const val = qty * rate;
-            const br = cli?.bRate || 0.5;
+            const br = cli?.bRate !== undefined ? cli.bRate : 0.5;
 
             // Brokerage Logic
             let brok = f.bOvr !== '' ? parseFloat(f.bOvr) : (val * br / 100);
@@ -1372,29 +1413,19 @@
             let intradayMatchText = "";
 
             if (f.bOvr === '' && intradayMatches.length > 0) {
-                // Simplified intraday logic: if there's *any* opposite trade today, we compare values
-                // For a complete system, you'd match exact quantities, but this meets the basic requirement
-                // "if i buy and sell the same amount of share at same day then brokrage will be on one only either on buy or sell whichever price is high"
-
-                // Find the total value of opposite trades today
                 let oppQty = 0;
                 let oppVal = 0;
-                let oppBrok = 0;
                 intradayMatches.forEach(t => {
                     oppQty += t.qty;
                     oppVal += t.val;
-                    oppBrok += t.brok;
                 });
 
-                // If quantities roughly match (we'll just apply it if there's any matching trade for simplicity)
                 if (oppQty > 0) {
                     const currentBrok = val * br / 100;
                     if (val > oppVal) {
-                        // Current trade is higher value, it takes the full brokerage
                         brok = currentBrok;
                         intradayMatchText = "(Intraday Match: This trade is higher, full brokerage applied)";
                     } else {
-                        // Current trade is lower value, it gets 0 brokerage (the other trade already paid it or will pay it)
                         brok = 0;
                         intradayMatchText = "(Intraday Match: Opposite trade was higher, no brokerage on this leg)";
                     }
@@ -1410,7 +1441,17 @@
                 const dt = new Date(f.dateStr);
                 dt.setHours(new Date().getHours(), new Date().getMinutes());
                 addTrade({ cid: f.cid, cn: cli?.name || '', sym: f.sym, sn: f.sn, type: f.type, qty, rate, brok, val, net, at: { toDate: () => dt } });
-                sp('trades');
+                
+                // Clear trade inputs to allow sequential entries without closing
+                setF(prev => ({
+                    ...prev,
+                    sym: '',
+                    sn: '',
+                    qty: '',
+                    rate: '',
+                    bOvr: ''
+                }));
+                setSq('');
             };
             return (<div>
                 <div className="ph"><div><h2>📈 New Trade Entry</h2><p>Record a buy or sell transaction</p></div></div>
@@ -1419,7 +1460,55 @@
                         <div className="cb"><form onSubmit={sub}>
                             <div className="fg">
                                 <div className="fgrp full"><label>Transaction Type *</label><div className="tts"><button type="button" className={`tt buy ${f.type === 'buy' ? 'on' : ''}`} onClick={() => set('type', 'buy')}>▲ BUY</button><button type="button" className={`tt sell ${f.type === 'sell' ? 'on' : ''}`} onClick={() => set('type', 'sell')}>▼ SELL</button></div></div>
-                                <div className="fgrp full"><label>Select Client *</label><select required value={f.cid} onChange={e => set('cid', e.target.value)}><option value="">— Choose client —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}</select></div>
+                                <div className="fgrp full" style={{ position: 'relative' }}>
+                                    <label>Select Client *</label>
+                                    <input
+                                        required
+                                        value={cSearch}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setCSearch(val);
+                                            setShowCDrop(true);
+                                            const exact = clients.find(c => c.cNo && c.cNo.toLowerCase().trim() === val.toLowerCase().trim());
+                                            if (exact) {
+                                                set('cid', exact.id);
+                                                setShowCDrop(false);
+                                            } else {
+                                                if (!val) set('cid', '');
+                                            }
+                                        }}
+                                        onFocus={e => {
+                                            setShowCDrop(true);
+                                            e.target.select();
+                                        }}
+                                        onBlur={() => {
+                                            setTimeout(() => setShowCDrop(false), 200);
+                                        }}
+                                        placeholder="Type client name or number (e.g. 01)..."
+                                        autoComplete="off"
+                                    />
+                                    {showCDrop && (
+                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r)', zIndex: 300, maxHeight: 200, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                return c.name.toLowerCase().includes(query) || (c.cNo && c.cNo.toLowerCase().includes(query)) || c.id.toLowerCase().includes(query);
+                                            }).map(c => (
+                                                <div key={c.id} onMouseDown={() => { set('cid', c.id); setShowCDrop(false); }} style={{ padding: '9px 13px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                                                    <strong style={{ color: 'var(--blue)' }}>{c.cNo ? `${c.cNo} - ` : ''}{c.name}</strong>
+                                                    <span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>({c.bRate}% brokerage)</span>
+                                                </div>
+                                            ))}
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                return c.name.toLowerCase().includes(query) || (c.cNo && c.cNo.toLowerCase().includes(query)) || c.id.toLowerCase().includes(query);
+                                            }).length === 0 && (
+                                                <div style={{ padding: '9px 13px', color: 'var(--dim)', textAlign: 'center' }}>No matching clients</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="fgrp full" style={{ position: 'relative' }}>
                                     <label>Stock Symbol *</label>
                                     <input value={sq} onChange={e => { setSq(e.target.value); set('sym', e.target.value.toUpperCase()); set('sn', ''); setSl(true); }} onFocus={() => setSl(true)} placeholder="Search stock e.g. RELIANCE, TCS..." autoComplete="off" />
@@ -1431,7 +1520,7 @@
                                 <div className="fgrp"><label>Quantity *</label><input type="number" required min="1" value={f.qty} onChange={e => set('qty', e.target.value)} placeholder="e.g. 100" /></div>
                                 <div className="fgrp"><label>Rate per Share (₹) *</label><div className="ig"><span className="ip">₹</span><input type="number" required step="0.01" min="0.01" value={f.rate} onChange={e => set('rate', e.target.value)} placeholder="0.00" /></div></div>
                                 <div className="fgrp"><label>Auto Brokerage</label><div style={{ padding: '9px 13px', background: 'var(--bg2)', borderRadius: 'var(--r)', border: '1px solid var(--border)', color: 'var(--amber)', fontWeight: 600, fontSize: '.85rem' }}>{br}% {cli ? `(${cli.name})` : '— select client'} {intradayMatchText && <span style={{ fontSize: 10, display: 'block', color: 'var(--dim)' }}>{intradayMatchText}</span>}</div></div>
-                                <div className="fgrp"><label>Override Brokerage ₹ <span style={{ color: 'var(--dim)', fontWeight: 400 }}>(optional)</span></label><div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" value={f.bOvr} onChange={e => set('bOvr', e.target.value)} placeholder="Leave blank = auto" /></div></div>
+                                <div className="fgrp"><label>Override Brokerage ₹ <span style={{ color: 'var(--dim)', fontWeight: 400 }}>(optional)</span></label><div className="ig"><span className="ip">₹</span><input type="number" step="any" min="0" value={f.bOvr} onChange={e => set('bOvr', e.target.value)} placeholder="Leave blank = auto" /></div></div>
                             </div>
                             {qty > 0 && rate > 0 && <div className="sum">
                                 <div style={{ fontWeight: 700, fontSize: '.83rem', marginBottom: 7 }}>📋 Trade Summary</div>
@@ -1451,17 +1540,23 @@
         // ── Trade Modal (Edit) ──
         function TM({ clients, init, onSave, onClose }) {
             const [f, setF] = useState({
-                cid: init?.cid || '',
-                type: init?.type || 'buy',
-                sym: init?.sym || '',
-                sn: init?.sn || '',
-                qty: init?.qty || '',
-                rate: init?.rate || '',
+                cid: init?.cid || '', type: init?.type || 'buy', sym: init?.sym || '',
+                sn: init?.sn || '', qty: init?.qty || '', rate: init?.rate || '',
                 bOvr: init?.brok !== undefined ? init.brok : '',
                 dateStr: init?.at ? (init.at.toDate ? init.at.toDate() : new Date(init.at)).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 10) : new Date().toISOString().slice(0, 10)
             });
             const [sq, setSq] = useState(init?.sym || ''); const [sl, setSl] = useState(false);
+            const [cSearch, setCSearch] = useState(''); const [showCDrop, setShowCDrop] = useState(false);
             const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+            useEffect(() => {
+                const selected = clients.find(c => c.id === f.cid);
+                if (selected) {
+                    setCSearch(selected.cNo ? `${selected.cNo} - ${selected.name}` : selected.name);
+                } else {
+                    setCSearch('');
+                }
+            }, [f.cid, clients]);
 
             const cli = clients.find(c => c.id === f.cid);
             const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
@@ -1494,7 +1589,55 @@
                         <div className="mb">
                             <div className="fg">
                                 <div className="fgrp full"><label>Transaction Type *</label><div className="tts"><button type="button" className={`tt buy ${f.type === 'buy' ? 'on' : ''}`} onClick={() => set('type', 'buy')}>▲ BUY</button><button type="button" className={`tt sell ${f.type === 'sell' ? 'on' : ''}`} onClick={() => set('type', 'sell')}>▼ SELL</button></div></div>
-                                <div className="fgrp full"><label>Select Client *</label><select required value={f.cid} onChange={e => set('cid', e.target.value)}><option value="">— Choose client —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}</select></div>
+                                <div className="fgrp full" style={{ position: 'relative' }}>
+                                    <label>Select Client *</label>
+                                    <input
+                                        required
+                                        value={cSearch}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setCSearch(val);
+                                            setShowCDrop(true);
+                                            const exact = clients.find(c => c.cNo && c.cNo.toLowerCase().trim() === val.toLowerCase().trim());
+                                            if (exact) {
+                                                set('cid', exact.id);
+                                                setShowCDrop(false);
+                                            } else {
+                                                if (!val) set('cid', '');
+                                            }
+                                        }}
+                                        onFocus={e => {
+                                            setShowCDrop(true);
+                                            e.target.select();
+                                        }}
+                                        onBlur={() => {
+                                            setTimeout(() => setShowCDrop(false), 200);
+                                        }}
+                                        placeholder="Type client name or number (e.g. 01)..."
+                                        autoComplete="off"
+                                    />
+                                    {showCDrop && (
+                                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r)', zIndex: 300, maxHeight: 200, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,.5)' }}>
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                return c.name.toLowerCase().includes(query) || (c.cNo && c.cNo.toLowerCase().includes(query)) || c.id.toLowerCase().includes(query);
+                                            }).map(c => (
+                                                <div key={c.id} onMouseDown={() => { set('cid', c.id); setShowCDrop(false); }} style={{ padding: '9px 13px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                                                    <strong style={{ color: 'var(--blue)' }}>{c.cNo ? `${c.cNo} - ` : ''}{c.name}</strong>
+                                                    <span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>({c.bRate}% brokerage)</span>
+                                                </div>
+                                            ))}
+                                            {clients.filter(c => {
+                                                if (!cSearch) return true;
+                                                const query = cSearch.toLowerCase();
+                                                return c.name.toLowerCase().includes(query) || (c.cNo && c.cNo.toLowerCase().includes(query)) || c.id.toLowerCase().includes(query);
+                                            }).length === 0 && (
+                                                <div style={{ padding: '9px 13px', color: 'var(--dim)', textAlign: 'center' }}>No matching clients</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="fgrp full" style={{ position: 'relative' }}>
                                     <label>Stock Symbol *</label>
                                     <input value={sq} onChange={e => { setSq(e.target.value); set('sym', e.target.value.toUpperCase()); set('sn', ''); setSl(true); }} onFocus={() => setSl(true)} placeholder="Search stock..." autoComplete="off" />
@@ -1505,7 +1648,7 @@
                                 <div className="fgrp"><label>Trade Date *</label><input type="date" required value={f.dateStr} onChange={e => set('dateStr', e.target.value)} /></div>
                                 <div className="fgrp"><label>Quantity *</label><input type="number" required min="1" value={f.qty} onChange={e => set('qty', e.target.value)} /></div>
                                 <div className="fgrp"><label>Rate (₹) *</label><div className="ig"><span className="ip">₹</span><input type="number" required step="0.01" min="0.01" value={f.rate} onChange={e => set('rate', e.target.value)} /></div></div>
-                                <div className="fgrp full"><label>Brokerage ₹ Override *</label><div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" required value={f.bOvr} onChange={e => set('bOvr', e.target.value)} /></div></div>
+                                <div className="fgrp full"><label>Brokerage ₹ Override *</label><div className="ig"><span className="ip">₹</span><input type="number" step="any" min="0" required value={f.bOvr} onChange={e => set('bOvr', e.target.value)} /></div></div>
                             </div>
                         </div>
                         <div className="mf"><button type="button" className="btn btn-o" onClick={onClose}>Cancel</button><button type="submit" className="btn btn-p">💾 Save Changes</button></div>
@@ -1544,12 +1687,24 @@
                     const ct = trades.filter(t => t.cid === client.id);
                     const h = {};
                     ct.forEach(t => {
-                        if (!h[t.sym]) h[t.sym] = { sym: t.sym, sn: t.sn, qty: 0, bv: 0, sv: 0, brok: 0 };
-                        if (t.type === 'buy') { h[t.sym].qty += t.qty; h[t.sym].bv += t.val; }
-                        else { h[t.sym].qty -= t.qty; h[t.sym].sv += t.val; }
+                        if (!h[t.sym]) h[t.sym] = { sym: t.sym, sn: t.sn, qty: 0, bv: 0, sv: 0, brok: 0, buyQty: 0 };
+                        if (t.type === 'buy') { 
+                            h[t.sym].qty += t.qty; 
+                            h[t.sym].bv += t.val;
+                            h[t.sym].buyQty += t.qty;
+                        } else { 
+                            h[t.sym].qty -= t.qty; 
+                            h[t.sym].sv += t.val; 
+                        }
                         h[t.sym].brok += t.brok || 0;
                     });
-                    return { client, h: Object.values(h), tb: ct.reduce((s, t) => s + (t.brok || 0), 0), tc: ct.length };
+                    const hl = Object.values(h).map(x => {
+                        const ab = x.bv > 0 ? (x.bv / (x.buyQty || 1)) : 0;
+                        const inv = x.qty > 0 ? x.qty * ab : 0;
+                        const rpl = x.qty === 0 ? (x.sv - x.bv) : (x.sv - (x.bv - inv));
+                        return { ...x, ab, inv, rpl };
+                    }).filter(x => x.qty !== 0 || x.bv > 0 || x.sv > 0);
+                    return { client, h: hl, tb: ct.reduce((s, t) => s + (t.brok || 0), 0), tc: ct.length };
                 });
             }, [clients, trades, sc]);
             return (<div>
@@ -1557,26 +1712,48 @@
                     <select style={{ padding: '9px 13px', minWidth: 200 }} value={sc} onChange={e => setSc(e.target.value)}><option value="all">All Clients</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                 </div>
                 {!data.length ? <div className="empty"><div className="ei">💼</div><h3>No portfolio data</h3><p>Add clients and trades first</p></div> :
-                    data.map(({ client, h, tb, tc }) => (
-                        <div key={client.id} style={{ marginBottom: 26 }}>
-                            <div className="poh">
-                                <div className="poa" style={{ background: ac(client.name) }}>{ini(client.name)}</div>
-                                <div><div className="pon">{client.name}</div><div className="pom">ID:{client.id} · {tc} trades · PAN:{client.pan || '—'}</div></div>
-                                <div className="pop"><div className="popv">{fmt(tb)}</div><div className="popl">Total Brokerage</div></div>
+                    data.map(({ client, h, tb, tc }) => {
+                        const totalInv = h.reduce((s, x) => s + x.inv, 0);
+                        const totalRpl = h.reduce((s, x) => s + x.rpl, 0);
+                        return (
+                            <div key={client.id} style={{ marginBottom: 26 }}>
+                                <div className="poh">
+                                    <div className="poa" style={{ background: ac(client.name) }}>{ini(client.name)}</div>
+                                    <div><div className="pon">{client.name}</div><div className="pom">ID:{client.id} · {tc} trades · PAN:{client.pan || '—'}</div></div>
+                                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '24px', textAlign: 'right' }}>
+                                        <div>
+                                            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)' }}>{fmt(totalInv)}</div>
+                                            <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>Net Investment</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ 
+                                                fontSize: '1.3rem', 
+                                                fontWeight: 800, 
+                                                color: totalRpl > 0 ? 'var(--green)' : totalRpl < 0 ? 'var(--red)' : 'var(--muted)' 
+                                            }}>
+                                                {totalRpl > 0 ? '+' : ''}{fmt(totalRpl)}
+                                            </div>
+                                            <div style={{ fontSize: '.7rem', color: 'var(--dim)' }}>Realized P&L</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {!h.length ? <div className="empty" style={{ padding: 24 }}><p>No holdings</p></div> :
+                                    <div className="tw"><table>
+                                        <thead><tr><th>Symbol</th><th>Company</th><th>Net Qty</th><th>Avg Buy</th><th>Invested</th><th>Realized P&L</th><th>Status</th></tr></thead>
+                                        <tbody>{h.map(x => <tr key={x.sym}>
+                                            <td><strong style={{ color: 'var(--blue)' }}>{x.sym}</strong></td>
+                                            <td style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{x.sn}</td>
+                                            <td><strong style={{ color: x.qty > 0 ? 'var(--green)' : x.qty < 0 ? 'var(--red)' : 'var(--dim)' }}>{fmtN(x.qty)}</strong></td>
+                                            <td>{fmt(x.ab)}</td>
+                                            <td>{fmt(x.inv)}</td>
+                                            <td style={{ fontWeight: 700, color: x.rpl > 0 ? 'var(--green)' : x.rpl < 0 ? 'var(--red)' : 'var(--dim)' }}>{x.rpl > 0 ? '+' : ''}{fmt(x.rpl)}</td>
+                                            <td><span className={`badge ${x.qty > 0 ? 'b-buy' : x.qty === 0 ? 'b-ina' : 'b-sell'}`}>{x.qty > 0 ? 'HOLDING' : x.qty === 0 ? 'CLOSED' : 'SHORT'}</span></td>
+                                        </tr>)}</tbody>
+                                    </table></div>}
                             </div>
-                            {!h.length ? <div className="empty" style={{ padding: 24 }}><p>No holdings</p></div> :
-                                <div className="tw"><table>
-                                    <thead><tr><th>Symbol</th><th>Company</th><th>Net Qty</th><th>Buy Value</th><th>Sell Value</th><th>Brokerage</th><th>Status</th></tr></thead>
-                                    <tbody>{h.map(x => <tr key={x.sym}>
-                                        <td><strong style={{ color: 'var(--blue)' }}>{x.sym}</strong></td>
-                                        <td style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{x.sn}</td>
-                                        <td><strong style={{ color: x.qty > 0 ? 'var(--green)' : x.qty < 0 ? 'var(--red)' : 'var(--dim)' }}>{fmtN(x.qty)}</strong></td>
-                                        <td>{fmt(x.bv)}</td><td>{fmt(x.sv)}</td>
-                                        <td style={{ color: 'var(--amber)' }}>{fmt(x.brok)}</td>
-                                        <td><span className={`badge ${x.qty > 0 ? 'b-buy' : x.qty === 0 ? 'b-ina' : 'b-sell'}`}>{x.qty > 0 ? 'HOLDING' : x.qty === 0 ? 'CLOSED' : 'SHORT'}</span></td>
-                                    </tr>)}</tbody>
-                                </table></div>}
-                        </div>))}
+                        );
+                    })
+                }
             </div>);
         }
 

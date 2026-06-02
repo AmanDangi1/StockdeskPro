@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { TradeTable } from '../components/SharedUI';
 import { STOCKS } from '../utils/helpers';
@@ -13,12 +13,25 @@ function TradeModal({ clients, init, onSave, onClose }) {
     const [sq, setSq] = useState(init?.sym || '');
     const [sl, setSl] = useState(false);
 
+    const [cSearch, setCSearch] = useState('');
+    const [showCDrop, setShowCDrop] = useState(false);
+
     const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+    // Sync client search field when selected client changes
+    useEffect(() => {
+        const selected = clients.find(c => c.id === f.cid);
+        if (selected) {
+            setCSearch(selected.cNo ? `${selected.cNo} - ${selected.name}` : selected.name);
+        } else {
+            setCSearch('');
+        }
+    }, [f.cid, clients]);
 
     const cli = clients.find(c => c.id === f.cid);
     const qty = parseFloat(f.qty) || 0, rate = parseFloat(f.rate) || 0;
     const val = qty * rate;
-    const br = cli?.bRate || 0.5;
+    const br = cli && (cli.bRate !== undefined && cli.bRate !== null) ? cli.bRate : 0.5;
 
     let brok = f.bOvr !== '' ? parseFloat(f.bOvr) : (val * br / 100);
     const net = f.type === 'buy' ? val + brok : val - brok;
@@ -46,7 +59,94 @@ function TradeModal({ clients, init, onSave, onClose }) {
                 <div className="mb">
                     <div className="fg">
                         <div className="fgrp full"><label>Transaction Type *</label><div className="tts"><button type="button" className={`tt buy ${f.type === 'buy' ? 'on' : ''}`} onClick={() => set('type', 'buy')}>▲ BUY</button><button type="button" className={`tt sell ${f.type === 'sell' ? 'on' : ''}`} onClick={() => set('type', 'sell')}>▼ SELL</button></div></div>
-                        <div className="fgrp full"><label>Select Client *</label><select required value={f.cid} onChange={e => set('cid', e.target.value)}><option value="">— Choose client —</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.bRate}% brokerage)</option>)}</select></div>
+                        <div className="fgrp full" style={{ position: 'relative' }}>
+                            <label>Select Client *</label>
+                            <input
+                                required
+                                value={cSearch}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    setCSearch(val);
+                                    setShowCDrop(true);
+                                    
+                                    // Check if exactly matches a client's cNo
+                                    const exact = clients.find(c => c.cNo && c.cNo.toLowerCase().trim() === val.toLowerCase().trim());
+                                    if (exact) {
+                                        set('cid', exact.id);
+                                        setShowCDrop(false);
+                                    } else {
+                                        if (!val) set('cid', '');
+                                    }
+                                }}
+                                onFocus={e => {
+                                    setShowCDrop(true);
+                                    e.target.select();
+                                }}
+                                onBlur={() => {
+                                    setTimeout(() => setShowCDrop(false), 200);
+                                }}
+                                placeholder="Type client name or number (e.g. 01)..."
+                                autoComplete="off"
+                            />
+                            {showCDrop && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    right: 0,
+                                    background: 'var(--card)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--r)',
+                                    zIndex: 300,
+                                    maxHeight: 200,
+                                    overflowY: 'auto',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,.5)'
+                                }}>
+                                    {clients.filter(c => {
+                                        if (!cSearch) return true;
+                                        const query = cSearch.toLowerCase();
+                                        const nameMatch = c.name.toLowerCase().includes(query);
+                                        const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                                        const idMatch = c.id && c.id.toLowerCase().includes(query);
+                                        return nameMatch || cNoMatch || idMatch;
+                                    }).map(c => (
+                                        <div
+                                            key={c.id}
+                                            onMouseDown={() => {
+                                                set('cid', c.id);
+                                                setShowCDrop(false);
+                                            }}
+                                            style={{
+                                                padding: '9px 13px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid var(--border)'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(79,142,247,.08)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = ''}
+                                        >
+                                            <strong style={{ color: 'var(--blue)' }}>
+                                                {c.cNo ? `${c.cNo} - ` : ''}{c.name}
+                                            </strong>
+                                            <span style={{ color: 'var(--dim)', fontSize: '.78rem', marginLeft: 8 }}>
+                                                ({c.bRate}% brokerage)
+                                            </span>
+                                        </div>
+                                    ))}
+                                    {clients.filter(c => {
+                                        if (!cSearch) return true;
+                                        const query = cSearch.toLowerCase();
+                                        const nameMatch = c.name.toLowerCase().includes(query);
+                                        const cNoMatch = c.cNo && c.cNo.toLowerCase().includes(query);
+                                        const idMatch = c.id && c.id.toLowerCase().includes(query);
+                                        return nameMatch || cNoMatch || idMatch;
+                                    }).length === 0 && (
+                                        <div style={{ padding: '9px 13px', color: 'var(--dim)', textAlign: 'center' }}>
+                                            No matching clients
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <div className="fgrp full" style={{ position: 'relative' }}>
                             <label>Stock Symbol *</label>
                             <input value={sq} onChange={e => { setSq(e.target.value); set('sym', e.target.value.toUpperCase()); set('sn', ''); setSl(true); }} onFocus={() => setSl(true)} placeholder="Search stock..." autoComplete="off" />
@@ -57,7 +157,7 @@ function TradeModal({ clients, init, onSave, onClose }) {
                         <div className="fgrp"><label>Trade Date *</label><input type="date" required value={f.dateStr} onChange={e => set('dateStr', e.target.value)} /></div>
                         <div className="fgrp"><label>Quantity *</label><input type="number" required min="1" value={f.qty} onChange={e => set('qty', e.target.value)} /></div>
                         <div className="fgrp"><label>Rate (₹) *</label><div className="ig"><span className="ip">₹</span><input type="number" required step="0.01" min="0.01" value={f.rate} onChange={e => set('rate', e.target.value)} /></div></div>
-                        <div className="fgrp full"><label>Brokerage ₹ Override *</label><div className="ig"><span className="ip">₹</span><input type="number" step="0.01" min="0" required value={f.bOvr} onChange={e => set('bOvr', e.target.value)} /></div></div>
+                        <div className="fgrp full"><label>Brokerage ₹ Override *</label><div className="ig"><span className="ip">₹</span><input type="number" step="any" min="0" required value={f.bOvr} onChange={e => set('bOvr', e.target.value)} /></div></div>
                     </div>
                 </div>
                 <div className="mf"><button type="button" className="btn btn-o" onClick={onClose}>Cancel</button><button type="submit" className="btn btn-p">💾 Save Changes</button></div>
